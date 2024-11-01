@@ -1,5 +1,25 @@
 #include "parser.h"
 
+static bool valid_index(int index, int len)
+{
+    return index < len - 1;
+}
+
+bool is_int(int index, std::string_view& file_content)
+{
+    return valid_index(index, file_content.length()) && file_content[index] == 'i' && (file_content[index+1] >= '0' && file_content[index+1] <= '9' || file_content[index+1] == '-');
+}
+
+bool is_string(int index, std::string_view& file_content)
+{
+    return valid_index(index, file_content.length()) && file_content[index] >= '0' && file_content[index] <= '9';
+}
+
+bool is_list(int index, std::string_view& file_content)
+{
+    return valid_index(index, file_content.length()) && file_content[index] == 'l';
+}
+
 int parse_int(int& index, std::string_view& file_content)
 {
     int num_len = 0, num = 0;
