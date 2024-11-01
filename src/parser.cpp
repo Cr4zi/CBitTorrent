@@ -32,6 +32,21 @@ int parse_int(int& index, std::string_view& file_content)
     return num;
 }
 
+std::string_view parse_string(int& index, std::string_view& file_content)
+{
+    int file_legnth = file_content.length();
+    int len_size = 0, i = index, len = 0;
+
+    while(file_content[i++] != ':' && i < file_legnth) len_size++;
+    int start_index = i, len_size_cpy = len_size;
+
+    for(i = index; i < len_size_cpy; i++) {
+        len += (file_content[i] - '0') * static_cast<int>(pow(10, len_size-1));
+        len_size--;
+    }
+    return file_content.substr(start_index, start_index+len-1);
+}
+
 int parse_file(std::string_view file_content)
 {
     int length = file_content.length();
