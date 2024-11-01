@@ -4,7 +4,7 @@
 #include "../src/parser.h"
 
 
-TEST_CASE( "Parser tests", "[parser]") {
+TEST_CASE( "Int Parser Tests", "[Int Parser]") {
     int index = 0;
     std::string_view s1 = "i42e";
     std::string_view s2 = "i-21e";
