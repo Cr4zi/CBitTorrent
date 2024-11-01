@@ -1,12 +1,14 @@
 #include "parser.h"
+#include <iostream>
 
-static inline int parse_int(int& index, std::string_view& file_content)
+int parse_int(int& index, std::string_view& file_content)
 {
     int num_len = 0, num = 0;
     int length = file_content.length();
 
     int j = index;
     while(file_content[++j] != 'e' && j < length) num_len++;
+    std::cout << file_content[j] << '\n';
     for(j = 0; j < num_len; j++) {
         if(file_content[j] == '-')
             num *= -1;

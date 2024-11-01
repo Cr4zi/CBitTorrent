@@ -2,7 +2,8 @@ CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++17
 SRC_DIR = src
 OBJ_DIR = .
-TARGET = main_program
+TEST_DIR = tests
+TARGET = cbittorrent
 
 SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 
@@ -16,7 +17,11 @@ $(TARGET): $(OBJS)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+tests:
+	$(MAKE) -C tests
+
 clean:
 	rm -f $(OBJ_DIR)/*.o $(TARGET)
+	$(MAKE) -C tests clean
 
 .PHONY: all clean

@@ -4,6 +4,7 @@
 #include <string_view>
 #include <cmath>
 
+int parse_int(int& index, std::string_view& file_content);
 int parse_file(std::string_view file_content);
 
 #endif // PARSER_H_
