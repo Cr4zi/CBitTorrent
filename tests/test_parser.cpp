@@ -3,6 +3,28 @@
 
 #include "../src/parser.h"
 
+TEST_CASE( "Type tests", "[Type Testing]") {
+    int index = 2;
+    std::string_view s1 = "x";
+    REQUIRE( is_int(index, s1) == false );
+
+    index = 1;
+    std::string_view s2 = "z2:he";
+    REQUIRE( is_string(index, s2 ) == true);
+
+    index = 0;
+    std::string_view s3 = "i123e";
+    REQUIRE( is_int(index, s3) == true );
+
+    index = 2;
+    std::string_view s4 = "asl4:spami42ee";
+    REQUIRE( is_list(index, s4) == true );
+
+    index = 1;
+    std::string_view s5 = "i42e";
+    REQUIRE( is_int(index, s5) == false );
+
+}
 
 TEST_CASE( "Int Parser Tests", "[Int Parser]") {
     int index = 0;

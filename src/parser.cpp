@@ -44,7 +44,22 @@ std::string_view parse_string(int& index, std::string_view& file_content)
         len += (file_content[i] - '0') * static_cast<int>(pow(10, len_size-1));
         len_size--;
     }
+    if(start_index + len <= file_legnth)
+        index = start_index+len;
+    else
+        index = -1;
+
     return file_content.substr(start_index, start_index+len-1);
+}
+
+std::vector<std::variant<int, std::string_view>> parse_list(int& index, std::string_view& file_content)
+{
+    std::vector<std::variant<int, std::string_view>> list;
+    // +1 if starting after literal 'l'
+    int i = index + 1;
+    while(file_content[i++] != 'e') {
+
+    }
 }
 
 int parse_file(std::string_view file_content)
