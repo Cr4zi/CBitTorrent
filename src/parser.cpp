@@ -1,5 +1,7 @@
 #include "parser.h"
 
+/* TODO: identify dictionary, and parse */
+
 static bool valid_index(int index, int len)
 {
     return index < len - 1;
@@ -20,7 +22,7 @@ bool is_list(int index, std::string_view& file_content)
     return valid_index(index, file_content.length()) && file_content[index] == 'l';
 }
 
-int parse_int(int& index, std::string_view& file_content)
+BencodeElementPtr parse_int(int& index, std::string_view& file_content)
 {
     int num_len = 0, num = 0;
     int length = file_content.length();
@@ -44,15 +46,16 @@ int parse_int(int& index, std::string_view& file_content)
     if(had_minus == 1)
         num *= -1;
 
-    if(index + j <= length)
-        index += j;
+    if(index + j + 2 <= length)
+        index += j + 2;
     else
         index = -1;
 
-    return num;
+
+    return std::make_shared<BencodeElement>(num);
 }
 
-std::string_view parse_string(int& index, std::string_view& file_content)
+BencodeElementPtr parse_string(int& index, std::string_view& file_content)
 {
     int file_legnth = file_content.length();
     int len_size = 0, i = index, len = 0;
@@ -60,40 +63,44 @@ std::string_view parse_string(int& index, std::string_view& file_content)
     while(file_content[i++] != ':' && i < file_legnth) len_size++;
     int start_index = i, len_size_cpy = len_size;
 
-    for(i = index; i < len_size_cpy; i++) {
-        len += (file_content[i] - '0') * static_cast<int>(pow(10, len_size-1));
+    for(i = 0; i < len_size_cpy; i++) {
+        len += (file_content[i+index] - '0') * static_cast<int>(pow(10, len_size-1));
         len_size--;
     }
+    /*
     if(start_index + len <= file_legnth)
         index = start_index+len;
     else
         index = -1;
+        */
+    index = start_index + len-1;
 
-    return file_content.substr(start_index, start_index+len-1);
+    return std::make_shared<BencodeElement>(file_content.substr(start_index, len));
 }
 
-std::vector<std::variant<int, std::string_view>> parse_list(int& index, std::string_view& file_content)
+BencodeElementPtr parse_list(int& index, std::string_view& file_content)
 {
-    std::vector<std::variant<int, std::string_view>> list;
-    // +1 if starting after literal 'l'
-    int i = index + 1;
-    while(file_content[i++] != 'e') {
+    std::vector<BencodeElementPtr> list;
 
+    // +1 if starting at literal 'l'
+    int i = index;
+    while(i < file_content.size() && file_content[i++] != 'e' && i != -1) {
+        if(is_int(i, file_content))
+            list.push_back(parse_int(i, file_content));
+        else if(is_string(i, file_content))
+            list.push_back(parse_string(i, file_content));
+        else if(is_list(i, file_content))
+            list.push_back(parse_list(i, file_content));
     }
+
+    return std::make_shared<BencodeElement>(list);
 }
 
 int parse_file(std::string_view file_content)
 {
     int length = file_content.length();
     for(int i = 0; i < length; i++) {
-        /* found an int */
-        if(i < length - 1 && file_content[i] == 'i' && (file_content[i+1] >= '0' && file_content[i+1] <= '9' || file_content[i+1] == '-')) {
-            int num = parse_int(++i, file_content);
-
-            if(i == -1) // Failed to parse_int?
-                return EXIT_FAILURE;
-        }
-
+        // TODO
     }
 
     return EXIT_SUCCESS;
