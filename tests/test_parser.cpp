@@ -1,6 +1,7 @@
 #include "catch.hpp"
 #include <memory>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "../src/parser.h"
@@ -25,6 +26,13 @@ TEST_CASE( "Type tests", "[Type Testing]") {
     index = 1;
     std::string_view s5 = "i42e";
     REQUIRE( is_int(index, s5) == false );
+
+    index = 0;
+    std::string_view s6 = "d2:hie";
+    REQUIRE( is_dictionary(index, s6) == true );
+
+    index = 2;
+    REQUIRE( is_dictionary(index, s6) == false );
 
 }
 
@@ -77,5 +85,15 @@ TEST_CASE( "List Parser Tests", "[List Parser]") {
     vec.push_back(std::make_shared<BencodeElement>(21));
     index = 0;
     REQUIRE( !compare_vectors(vec, std::get<std::vector<BencodeElementPtr>>(parse_list(index, s1)->value)) );
+
+}
+
+TEST_CASE( "Dictionary Parser Test", "[Dictionary Parser]" ) {
+    int index = 0;
+    std::string_view s1 = "d3:bar4:spam3:fooi42ee";
+    std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map = {
+        {"bar", std::make_shared<BencodeElement>("spam")},
+        {"foo", std::make_shared<BencodeElement>(42)},
+    };
 
 }

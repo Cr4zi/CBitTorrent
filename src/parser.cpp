@@ -1,4 +1,5 @@
 #include "parser.h"
+#include <unordered_map>
 
 /* TODO: identify dictionary, and parse */
 
@@ -20,6 +21,11 @@ bool is_string(int index, std::string_view& file_content)
 bool is_list(int index, std::string_view& file_content)
 {
     return valid_index(index, file_content.length()) && file_content[index] == 'l';
+}
+
+bool is_dictionary(int index, std::string_view& file_content)
+{
+    return valid_index(index, file_content.length()) && file_content[index] == 'd';
 }
 
 BencodeElementPtr parse_int(int& index, std::string_view& file_content)
@@ -72,7 +78,7 @@ BencodeElementPtr parse_string(int& index, std::string_view& file_content)
         index = start_index+len;
     else
         index = -1;
-        */
+    */
     index = start_index + len-1;
 
     return std::make_shared<BencodeElement>(file_content.substr(start_index, len));
@@ -91,11 +97,61 @@ BencodeElementPtr parse_list(int& index, std::string_view& file_content)
             list.push_back(parse_string(i, file_content));
         else if(is_list(i, file_content))
             list.push_back(parse_list(i, file_content));
+        else if(is_dictionary(i, file_content))
+            list.push_back(parse_dictionary(i, file_content));
         else
             return nullptr;
     }
 
+    index = i;
+
     return std::make_shared<BencodeElement>(list);
+}
+
+BencodeElementPtr parse_dictionary(int& index, std::string_view& file_content)
+{
+    std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map;
+
+    int i = index;
+    std::variant<int, std::string_view> key;
+    BencodeElementPtr value;
+    bool searching_key = true;
+
+    while(i < file_content.size() && file_content[i++] != 'e' && i != -1) {
+        if(searching_key) {
+            if(is_int(i, file_content)) {
+                int* k = std::get_if<int>(&parse_int(i, file_content)->value);
+                if(!k)
+                    return nullptr;
+                key = *k;
+            }
+            else if(is_string(i, file_content)) {
+                std::string_view* k = std::get_if<std::string_view>(&parse_string(i, file_content)->value);
+                if(!k)
+                    return nullptr;
+                key = *k;
+            }
+            else
+                return nullptr;
+            searching_key = false;
+        } else {
+            if(is_int(i, file_content))
+                value = parse_int(i, file_content);
+            else if(is_string(i, file_content))
+                value = parse_string(i, file_content);
+            else if(is_list(i, file_content))
+                value = parse_list(i, file_content);
+            else if(is_dictionary(i, file_content))
+                value = parse_dictionary(i, file_content);
+            else
+                return nullptr;
+        }
+        map[key] = value;
+    }
+
+    index = i;
+
+    return std::make_shared<BencodeElement>(map);
 }
 
 int parse_file(std::string_view file_content)
