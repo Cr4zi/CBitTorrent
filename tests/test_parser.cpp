@@ -2,7 +2,6 @@
 #include <memory>
 #include <string_view>
 #include <vector>
-#include <iostream>
 
 #include "../src/parser.h"
 
@@ -52,6 +51,16 @@ TEST_CASE( "String Parser Tests", "[String Praser]") {
     REQUIRE( std::get<std::string_view>(parse_string(index, s2)->value) == "AAAAAAAAAAAAAAAAAAA" );
 }
 
+bool compare_vectors(std::vector<BencodeElementPtr> vec1, std::vector<BencodeElementPtr> vec2)
+{
+    if(vec1.size() != vec2.size()) return false;
+
+    return std::equal(vec1.begin(), vec1.end(), vec2.begin(),
+                      [](const BencodeElementPtr& a, const BencodeElementPtr& b) {
+                          return *a == *b;
+                      });
+}
+
 TEST_CASE( "List Parser Tests", "[List Parser]") {
     int index = 0;
 
@@ -59,13 +68,14 @@ TEST_CASE( "List Parser Tests", "[List Parser]") {
     std::vector<BencodeElementPtr> vec;
     vec.push_back(std::make_shared<BencodeElement>("spam"));
     vec.push_back(std::make_shared<BencodeElement>(42));
+    REQUIRE( compare_vectors(vec, std::get<std::vector<BencodeElementPtr>>(parse_list(index, s1)->value)) );
 
-    REQUIRE( vec == std::get<std::vector<BencodeElementPtr>>(parse_list(index, s1)->value) );
-
-    /*
     std::string_view s2 = "lsaxi42ee";
     index = 0;
     REQUIRE( parse_list(index, s2) == nullptr );
-    */
+
+    vec.push_back(std::make_shared<BencodeElement>(21));
+    index = 0;
+    REQUIRE( !compare_vectors(vec, std::get<std::vector<BencodeElementPtr>>(parse_list(index, s1)->value)) );
 
 }

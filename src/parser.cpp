@@ -91,6 +91,8 @@ BencodeElementPtr parse_list(int& index, std::string_view& file_content)
             list.push_back(parse_string(i, file_content));
         else if(is_list(i, file_content))
             list.push_back(parse_list(i, file_content));
+        else
+            return nullptr;
     }
 
     return std::make_shared<BencodeElement>(list);
