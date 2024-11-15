@@ -145,6 +145,7 @@ BencodeElementPtr parse_dictionary(int& index, std::string_view& file_content)
                 value = parse_dictionary(i, file_content);
             else
                 return nullptr;
+            searching_key = true;
         }
         map[key] = value;
     }

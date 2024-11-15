@@ -3,6 +3,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
 
 #include "../src/parser.h"
 
@@ -88,12 +89,49 @@ TEST_CASE( "List Parser Tests", "[List Parser]") {
 
 }
 
+bool compare_maps(std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map1, std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map2)
+{
+    if(map1.size() != map2.size()) return false;
+
+    for(const auto& pair : map1) {
+        auto val = map2.find(pair.first);
+
+        // could not find a value with key as map1
+        if(val == map2.end())
+            return false;
+
+        std::vector<BencodeElementPtr>* vec1 = std::get_if<std::vector<BencodeElementPtr>>(&(pair.second->value));
+        std::vector<BencodeElementPtr>* vec2 = std::get_if<std::vector<BencodeElementPtr>>(&(val->second->value));
+        std::cout << "What the sigma" << std::endl;
+
+
+        // if both are vectors and aren't equal
+        if(vec1 && vec2)
+            if(!compare_vectors(*vec1, *vec2))
+                return false;
+
+        // if one of them is a vector and the other one isn't
+        if((vec1 && !vec2) || (!vec1 && vec2))
+            return false;
+
+        if(pair.second->value != val->second->value)
+            return false;
+    }
+
+    return true;
+}
+
 TEST_CASE( "Dictionary Parser Test", "[Dictionary Parser]" ) {
     int index = 0;
     std::string_view s1 = "d3:bar4:spam3:fooi42ee";
-    std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map = {
+    std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map2 = {
         {"bar", std::make_shared<BencodeElement>("spam")},
         {"foo", std::make_shared<BencodeElement>(42)},
     };
+
+    std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map1 = std::get<std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr>>(parse_dictionary(index, s1)->value);
+    REQUIRE( map1.size() == 2 );
+
+    REQUIRE( compare_maps(map1, map2) );
 
 }
