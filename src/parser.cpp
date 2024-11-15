@@ -155,12 +155,15 @@ BencodeElementPtr parse_dictionary(int& index, std::string_view& file_content)
     return std::make_shared<BencodeElement>(map);
 }
 
-int parse_file(std::string_view file_content)
+BencodeElementPtr parse_file(std::string_view file_content)
 {
-    int length = file_content.length();
-    for(int i = 0; i < length; i++) {
-        // TODO
-    }
+    BencodeElementPtr parsed;
 
-    return EXIT_SUCCESS;
+    int index = 0;
+    if(is_dictionary(index, file_content))
+        parsed = parse_dictionary(index, file_content);
+    else
+        return nullptr;
+
+    return parsed;
 }

@@ -34,6 +34,6 @@ BencodeElementPtr parse_int(int& index, std::string_view& file_content);
 BencodeElementPtr parse_string(int& index, std::string_view& file_content);
 BencodeElementPtr parse_list(int& index, std::string_view& file_content);
 BencodeElementPtr parse_dictionary(int& index, std::string_view& file_content);
-int parse_file(std::string_view file_content);
+BencodeElementPtr parse_file(std::string_view file_content);
 
 #endif // PARSER_H_
