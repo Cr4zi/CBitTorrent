@@ -1,8 +1,6 @@
 #include "parser.h"
 #include <unordered_map>
 
-/* TODO: identify dictionary, and parse */
-
 static bool valid_index(int index, int len)
 {
     return index < len - 1;
