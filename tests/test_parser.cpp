@@ -102,7 +102,6 @@ bool compare_maps(std::unordered_map<std::variant<int, std::string_view>, Bencod
 
         std::vector<BencodeElementPtr>* vec1 = std::get_if<std::vector<BencodeElementPtr>>(&(pair.second->value));
         std::vector<BencodeElementPtr>* vec2 = std::get_if<std::vector<BencodeElementPtr>>(&(val->second->value));
-        std::cout << "What the sigma" << std::endl;
 
 
         // if both are vectors and aren't equal
@@ -121,7 +120,8 @@ bool compare_maps(std::unordered_map<std::variant<int, std::string_view>, Bencod
     return true;
 }
 
-TEST_CASE( "Dictionary Parser Test", "[Dictionary Parser]" ) {
+TEST_CASE( "Dictionary Parser Test", "[Dictionary Parser]" )
+{
     int index = 0;
     std::string_view s1 = "d3:bar4:spam3:fooi42ee";
     std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map2 = {
