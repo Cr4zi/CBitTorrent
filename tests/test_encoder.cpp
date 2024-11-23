@@ -40,4 +40,10 @@ TEST_CASE( "Dictionary Encoding Tests", "[Dictionary Encoding]" ) {
     };
 
     REQUIRE( encode_dictionary(map2) == "d4:spaml1:a1:bee" );
+
+    std::string_view s1 = "d3:bar4:spam3:fooi42ee";
+    int index = 0;
+    std::map<std::variant<int, std::string_view>, BencodeElementPtr> map1 = std::get<std::map<std::variant<int, std::string_view>, BencodeElementPtr>>(parse_dictionary(index, s1)->value);
+
+    REQUIRE( encode_dictionary(map1) == s1 );
 }
