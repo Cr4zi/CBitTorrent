@@ -1,5 +1,5 @@
 #include "parser.h"
-#include <unordered_map>
+#include <map>
 
 static bool valid_index(int index, int len)
 {
@@ -108,7 +108,7 @@ BencodeElementPtr parse_list(int& index, std::string_view& file_content)
 
 BencodeElementPtr parse_dictionary(int& index, std::string_view& file_content)
 {
-    std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map;
+    std::map<std::variant<int, std::string_view>, BencodeElementPtr> map;
 
     int i = index;
     std::variant<int, std::string_view> key;

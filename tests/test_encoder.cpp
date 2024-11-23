@@ -2,6 +2,7 @@
 
 #include "../src/encoder.h"
 #include "../src/parser.h"
+#include <map>
 
 TEST_CASE( "Int Encoding Tests", "[Int Encoding]" ) {
     REQUIRE( encode_int(51) == "i51e" );
@@ -24,7 +25,7 @@ TEST_CASE( "List Encoding Tests", "[List Encoding]" ) {
 }
 
 TEST_CASE( "Dictionary Encoding Tests", "[Dictionary Encoding]" ) {
-    std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map = {
+    std::map<std::variant<int, std::string_view>, BencodeElementPtr> map = {
         {"foo", std::make_shared<BencodeElement>(42)},
         {"bar", std::make_shared<BencodeElement>("spam")},
     };
@@ -34,7 +35,7 @@ TEST_CASE( "Dictionary Encoding Tests", "[Dictionary Encoding]" ) {
     std::vector<BencodeElementPtr> vec;
     vec.push_back(std::make_shared<BencodeElement>("a"));
     vec.push_back(std::make_shared<BencodeElement>("b"));
-    std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map2 = {
+    std::map<std::variant<int, std::string_view>, BencodeElementPtr> map2 = {
         {"spam", std::make_shared<BencodeElement>(vec)},
     };
 

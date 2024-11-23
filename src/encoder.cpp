@@ -3,9 +3,9 @@
 #include <iostream>
 #include <string>
 #include <variant>
-#include <unordered_map>
+#include <map>
 
-using Map = std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr>;
+using Map = std::map<std::variant<int, std::string_view>, BencodeElementPtr>;
 
 std::string encode_int(int value)
 {

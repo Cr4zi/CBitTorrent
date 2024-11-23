@@ -1,7 +1,7 @@
 #include "catch.hpp"
 #include <memory>
 #include <string_view>
-#include <unordered_map>
+#include <map>
 #include <vector>
 #include <iostream>
 
@@ -89,7 +89,7 @@ TEST_CASE( "List Parser Tests", "[List Parser]") {
 
 }
 
-bool compare_maps(std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map1, std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map2)
+bool compare_maps(std::map<std::variant<int, std::string_view>, BencodeElementPtr> map1, std::map<std::variant<int, std::string_view>, BencodeElementPtr> map2)
 {
     if(map1.size() != map2.size()) return false;
 
@@ -124,12 +124,12 @@ TEST_CASE( "Dictionary Parser Test", "[Dictionary Parser]" )
 {
     int index = 0;
     std::string_view s1 = "d3:bar4:spam3:fooi42ee";
-    std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map2 = {
+    std::map<std::variant<int, std::string_view>, BencodeElementPtr> map2 = {
         {"bar", std::make_shared<BencodeElement>("spam")},
         {"foo", std::make_shared<BencodeElement>(42)},
     };
 
-    std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr> map1 = std::get<std::unordered_map<std::variant<int, std::string_view>, BencodeElementPtr>>(parse_dictionary(index, s1)->value);
+    std::map<std::variant<int, std::string_view>, BencodeElementPtr> map1 = std::get<std::map<std::variant<int, std::string_view>, BencodeElementPtr>>(parse_dictionary(index, s1)->value);
     REQUIRE( map1.size() == 2 );
 
     REQUIRE( compare_maps(map1, map2) );
