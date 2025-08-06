@@ -6,7 +6,7 @@ BencodeDict decodeFile(std::ifstream& input) {
         case 'd':
             return decodeDict(input);
     }
-    throw DecodeException("Invalid torrent file");
+    throw DecodeException("Invalid torrent file.");
 }
 
 
@@ -88,7 +88,7 @@ BencodeList decodeList(std::ifstream& input) {
                 list.push_back(decodeString(input));
                 break;
             default:
-                throw DecodeException("Invalid torrent file. Sigma ligma");
+                throw DecodeException("Invalid torrent file.");
         }
     }
 
@@ -129,7 +129,7 @@ BencodeDict decodeDict(std::ifstream& input) {
                     map.insert({str, decodeString(input)});
                     break;
                 default:
-                    throw DecodeException("Invalid torrent file. help 1");
+                    throw DecodeException("Invalid torrent file.");
             }
         } catch (const std::bad_variant_access& ex) {
             std::cout << ex.what() << '\n';
