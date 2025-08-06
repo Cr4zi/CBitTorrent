@@ -1,21 +1,15 @@
 #ifndef TORRENT_FILE_H
 #define TORRENT_FILE_H
+#include "Bencode.h"
 
 #include <fstream>
 #include <string>
 #include <iostream>
-
-/**
- * BencodeElement, recursive element
- * Int
- * String(unsigned char *)
- * HashMap<unsigned char *,T>
- * List<T>
- */
+#include <vector>
 
 class TorrentFile {
 private:
-    std::ifstream stream;
+    BencodeDict dict;
 
 public:
     TorrentFile(const std::string& filename);

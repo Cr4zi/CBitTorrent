@@ -1,7 +1,8 @@
 #include <iostream>
+#include "TorrentFile.h"
 
 int main() {
-    std::cout << "Hello, World!\n";
+    TorrentFile* torrent = new TorrentFile("test.torrent");
 
     return 0;
 }
