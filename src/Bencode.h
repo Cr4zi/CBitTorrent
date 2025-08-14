@@ -33,4 +33,10 @@ BencodeDict decodeDict(std::ifstream& input);
 
 void consumeExpectedCharacter(std::ifstream& input, char expected);
 
+std::string encode(BencodeElement elem);
+std::string encodeInt(int64_t value);
+std::string encodeString(std::string str);
+std::string encodeList(std::vector<BencodeElement> arr);
+std::string encodeDict(std::map<std::string, BencodeElement> map);
+
 #endif // BENCODE_H_

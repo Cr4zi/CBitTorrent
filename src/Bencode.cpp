@@ -1,4 +1,6 @@
 #include "Bencode.h"
+#include <string>
+#include <variant>
 
 
 BencodeDict decodeFile(std::ifstream& input) {
@@ -55,8 +57,6 @@ BencodeElement decodeString(std::ifstream& input) {
     for(size_t i = 0; i < length; i++) {
         result += input.get();
     }
-
-    std::cout << "Found: " << result << '\n';
 
     return result;
 }
@@ -147,4 +147,56 @@ void consumeExpectedCharacter(std::ifstream& input, char expected) {
     if(ch != expected) {
         throw DecodeException(std::string(std::string("Expected character ") + expected).c_str());
     }
+}
+
+std::string encode(BencodeElement elem) {
+    std::string result{};
+
+
+    if(std::holds_alternative<int64_t>(elem)) {
+        int64_t val = std::get<int64_t>(elem);
+        result = encodeInt(val);
+    } else if(std::holds_alternative<std::string>(elem)) {
+        std::string val = std::get<std::string>(elem);
+        result = encodeString(val);
+    } else if(std::holds_alternative<BencodeList>(elem)) {
+        std::vector<BencodeElement> arr = std::get<BencodeList>(elem).list;
+        result = encodeList(arr);
+    } else if(std::holds_alternative<BencodeDict>(elem)) {
+        std::map<std::string, BencodeElement> map = std::get<BencodeDict>(elem).map;
+        result = encodeDict(map);
+    } else {
+        throw EncodeExcpetion("Failed to encode Bencode Element");
+    }
+
+    return result;
+}
+
+std::string encodeInt(int64_t value) {
+    return "i" + std::to_string(value) + "e";
+}
+
+std::string encodeString(std::string str) {
+    return std::to_string(str.length()) + ":" + str;
+}
+
+std::string encodeList(std::vector<BencodeElement> arr) {
+    std::string result = "l";
+    for(BencodeElement& elem: arr) {
+        result.append(encode(elem));
+    }
+    result.append("e");
+    return result;
+}
+
+
+std::string encodeDict(std::map<std::string, BencodeElement> map) {
+    std::string result = "d";
+    for(std::map<std::string, BencodeElement>::iterator it = map.begin(); it != map.end(); it++) {
+        result.append(encodeString(it->first));
+        result.append(encode(it->second));
+    }
+    result.append("e");
+
+    return result;
 }

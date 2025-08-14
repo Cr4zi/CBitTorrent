@@ -9,11 +9,6 @@ TorrentFile::TorrentFile(const std::string& filename) {
         return;
     }
     this->dict = decodeFile(stream);
-    if (auto search = this->dict.map.find("announce"); search != this->dict.map.end())
-        std::cout << "Found " << search->first << " " << std::get<std::string>(search->second) << '\n';
-    else
-        std::cout << "Not found\n";
-
     stream.close();
 }
 
