@@ -17,4 +17,16 @@ public:
 };
 
 
+class EncodeExcpetion : public std::exception {
+private:
+    std::string message;
+public:
+    EncodeExcpetion(const char *msg) :
+    message(msg) {}
+
+    const char* what() const noexcept {
+        return this->message.c_str();
+    }
+};
+
 #endif // EXCEPTIONS_H_
