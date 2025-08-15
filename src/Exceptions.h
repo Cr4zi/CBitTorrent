@@ -17,11 +17,11 @@ public:
 };
 
 
-class EncodeExcpetion : public std::exception {
+class EncodeException: public std::exception {
 private:
     std::string message;
 public:
-    EncodeExcpetion(const char *msg) :
+    EncodeException(const char *msg) :
     message(msg) {}
 
     const char* what() const noexcept {

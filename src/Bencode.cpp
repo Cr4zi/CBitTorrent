@@ -166,7 +166,7 @@ std::string encode(BencodeElement elem) {
         std::map<std::string, BencodeElement> map = std::get<BencodeDict>(elem).map;
         result = encodeDict(map);
     } else {
-        throw EncodeExcpetion("Failed to encode Bencode Element");
+        throw EncodeException("Failed to encode Bencode Element");
     }
 
     return result;
