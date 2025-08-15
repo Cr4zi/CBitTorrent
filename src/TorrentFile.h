@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <openssl/sha.h>
 
 class TorrentFile {
 private:
@@ -14,6 +15,8 @@ private:
 public:
     TorrentFile(const std::string& filename);
     ~TorrentFile();
+
+    std::string calculateInfoHash();
 };
 
 #endif

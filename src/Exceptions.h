@@ -29,4 +29,16 @@ public:
     }
 };
 
+class InfoKeyNotFound: public std::exception {
+private:
+    std::string message;
+public:
+    InfoKeyNotFound(const char *msg) :
+    message(msg) {}
+
+    const char* what() const noexcept {
+        return this->message.c_str();
+    }
+};
+
 #endif // EXCEPTIONS_H_

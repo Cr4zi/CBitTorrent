@@ -14,3 +14,16 @@ TorrentFile::TorrentFile(const std::string& filename) {
 
 TorrentFile::~TorrentFile() {
 }
+
+std::string TorrentFile::calculateInfoHash() {
+    std::map<std::string, BencodeElement>::iterator info = this->dict.map.find("info");
+    if(info == this->dict.map.end())
+        throw InfoKeyNotFound("Info Key not Found");
+
+    std::string infoStr = encode(info->second);
+    unsigned char* ibuf = reinterpret_cast<unsigned char *>(infoStr.data());
+    unsigned char obuf[SHA_DIGEST_LENGTH];
+    SHA1(ibuf, infoStr.size(), obuf);
+
+    return std::string(reinterpret_cast<char *>(obuf), SHA_DIGEST_LENGTH);
+}
