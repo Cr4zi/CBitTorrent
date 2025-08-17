@@ -1,4 +1,4 @@
-#include "TorrentFile.h"
+#include "torrent_file.h"
 
 TorrentFile::TorrentFile(const std::string& filename) {
     // std::ios_base::binary open file in binary mode

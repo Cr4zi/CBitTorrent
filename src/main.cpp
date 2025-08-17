@@ -1,5 +1,5 @@
 #include <iostream>
-#include "TorrentFile.h"
+#include "torrent_file.h"
 
 int main() {
     TorrentFile* torrent = new TorrentFile("test.torrent");

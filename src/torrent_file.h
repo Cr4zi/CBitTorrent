@@ -1,6 +1,6 @@
 #ifndef TORRENT_FILE_H
 #define TORRENT_FILE_H
-#include "Bencode.h"
+#include "bencode.h"
 
 #include <fstream>
 #include <string>
