@@ -2,43 +2,32 @@
 #define EXCEPTIONS_H_
 
 #include <exception>
+#include <stdexcept>
 #include <string>
 
-class DecodeException : public std::exception {
-private:
-    std::string message;
+class DecodeException : public std::runtime_error {
 public:
-    DecodeException(const char *msg) :
-    message(msg) {}
-
-    const char* what() const noexcept {
-        return this->message.c_str();
-    }
+    DecodeException(const std::string& msg) :
+        std::runtime_error(msg) {}
 };
 
 
-class EncodeException: public std::exception {
-private:
-    std::string message;
+class EncodeException: public std::runtime_error {
 public:
-    EncodeException(const char *msg) :
-    message(msg) {}
-
-    const char* what() const noexcept {
-        return this->message.c_str();
-    }
+    EncodeException(const std::string& msg) :
+        std::runtime_error(msg) {}
 };
 
-class InfoKeyNotFound: public std::exception {
-private:
-    std::string message;
+class InfoKeyNotFound: public std::runtime_error {
 public:
-    InfoKeyNotFound(const char *msg) :
-    message(msg) {}
+    InfoKeyNotFound(const std::string& msg) :
+        std::runtime_error(msg) {}
+};
 
-    const char* what() const noexcept {
-        return this->message.c_str();
-    }
+class SocketCreationException : public std::runtime_error {
+public:
+    SocketCreationException(const std::string& msg) :
+        std::runtime_error(msg) {}
 };
 
 #endif // EXCEPTIONS_H_
