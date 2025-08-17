@@ -12,8 +12,7 @@ TorrentFile::TorrentFile(const std::string& filename) {
     stream.close();
 }
 
-TorrentFile::~TorrentFile() {
-}
+TorrentFile::~TorrentFile() {}
 
 std::string TorrentFile::calculateInfoHash() {
     std::map<std::string, BencodeElement>::iterator info = this->dict.map.find("info");
@@ -25,5 +24,11 @@ std::string TorrentFile::calculateInfoHash() {
     unsigned char obuf[SHA_DIGEST_LENGTH];
     SHA1(ibuf, infoStr.size(), obuf);
 
-    return std::string(reinterpret_cast<char *>(obuf), SHA_DIGEST_LENGTH);
+    std::ostringstream oss;
+    for(int i = 0; i < SHA_DIGEST_LENGTH; i++) {
+        // turning bytex for example 0x12 to 12 etc..., if 1 charcater add fill 0
+        oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(obuf[i]);
+    }
+
+    return oss.str();
 }

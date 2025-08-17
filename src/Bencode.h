@@ -10,6 +10,8 @@
 #include <fstream>
 #include <iostream>
 #include <cctype>
+#include <sstream>
+#include <iomanip>
 
 
 struct BencodeDict;
