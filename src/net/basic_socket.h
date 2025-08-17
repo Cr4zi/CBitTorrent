@@ -12,9 +12,9 @@ private:
     int sock_fd;
     struct sockaddr_in addr;
 
-    void set_nonblocking();
 public:
     BasicSocket(int domain, int type, int protocol, int port, uint32_t interface, int backlog, bool non_blocking = true);
+    static void set_nonblocking(int sock_fd);
 };
 
 

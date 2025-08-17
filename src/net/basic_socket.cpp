@@ -16,19 +16,18 @@ BasicSocket::BasicSocket(int domain, int type, int protocol, int port, uint32_t 
         throw SocketCreationException("Failed to bind socket.");
 
     if(non_blocking)
-        this->set_nonblocking();
+        this->set_nonblocking(this->sock_fd);
 
     if(listen(this->sock_fd, backlog) == -1)
         throw SocketCreationException("Listen");
 
 }
 
-
-void BasicSocket::set_nonblocking() {
-    int curr_flags = fcntl(this->sock_fd, F_GETFL, 0);
+void BasicSocket::set_nonblocking(int sock_fd) {
+    int curr_flags = fcntl(sock_fd, F_GETFL, 0);
     if(curr_flags < 0)
         throw SocketCreationException("Failed to get socket file descriptor flags.");
 
-    if(fcntl(this->sock_fd, F_SETFL, curr_flags | O_NONBLOCK))
+    if(fcntl(sock_fd, F_SETFL, curr_flags | O_NONBLOCK))
         throw SocketCreationException("Failed to set socket as non blocking.");
 }
