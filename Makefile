@@ -11,7 +11,7 @@ SRCDIR 		= src
 OBJDIR		= obj
 TARGET		= cbittorrent
 
-SRC_FILES 	= $(wildcard $(SRCDIR)/*.cpp)
+SRC_FILES 	= $(wildcard $(SRCDIR)/*.cpp) $(wildcard $(SRCDIR)/net/*.cpp)
 
 OBJ_FILES	= $(patsubst $(SRCDIR)/%.cpp, $(OBJDIR)/%.o, $(SRC_FILES))
 
@@ -22,6 +22,7 @@ $(TARGET): $(OBJ_FILES)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@mkdir -p $(OBJDIR)
+	@mkdir -p $(OBJDIR)/net
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
