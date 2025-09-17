@@ -1,25 +1,15 @@
 #include "basic_socket.h"
+#include <sys/socket.h>
 
-BasicSocket::BasicSocket(int domain, int type, int protocol, int port, uint32_t interface, int backlog, bool non_blocking) {
-    this->sock_fd = socket(domain, protocol, port);
+BasicSocket::BasicSocket(int domain, int type, int protocol, bool non_blocking) {
+    this->sock_fd = socket(domain, type, protocol);
+    this->domain = domain;
 
-    if(this->sock_fd < 0) {
+    if(this->sock_fd < 0)
         throw SocketCreationException("Failed creating a basic socket.");
-    }
-
-    memset(&this->addr, 0, sizeof(this->addr));
-    this->addr.sin_family = domain;
-    this->addr.sin_port = htons(port);
-    this->addr.sin_addr.s_addr = htonl(interface);
-
-    if(bind(this->sock_fd, (struct sockaddr *)&this->addr, sizeof(struct sockaddr)) == -1)
-        throw SocketCreationException("Failed to bind socket.");
 
     if(non_blocking)
         this->set_nonblocking(this->sock_fd);
-
-    if(listen(this->sock_fd, backlog) == -1)
-        throw SocketCreationException("Listen");
 
 }
 
@@ -31,3 +21,61 @@ void BasicSocket::set_nonblocking(int sock_fd) {
     if(fcntl(sock_fd, F_SETFL, curr_flags | O_NONBLOCK))
         throw SocketCreationException("Failed to set socket as non blocking.");
 }
+
+void BasicSocket::bindSocket(int port) {
+    memset(&this->addr, 0, sizeof(this->addr));
+    this->addr.sin_family = this->domain;
+    this->addr.sin_addr.s_addr = INADDR_ANY;
+    this->addr.sin_port = htons(port);
+
+    if(bind(this->sock_fd, (struct sockaddr *)&this->addr, sizeof(this->addr)) == -1) {
+        throw new SocketBindException("In bindSocket");
+    }
+
+    this->isBound = true;
+}
+
+void BasicSocket::listenSocket(int backlog) {
+    if(!this->isBound) {
+        throw new SocketListenException("Socket is not binded");
+    }
+
+    if(listen(this->sock_fd, backlog) == -1) {
+        throw new SocketListenException("Listen");
+    }
+}
+
+void BasicSocket::connectSocket(const char* host, int port) {
+    memset(&this->addr, 0, sizeof(this->addr));
+    this->addr.sin_family = this->domain;
+    this->addr.sin_port = htons(port);
+
+    if(inet_pton(this->domain, host, &this->addr.sin_addr) <= 0) {
+        throw new SocketConnectException("inet_pton");
+    }
+
+    if(connect(this->sock_fd, (struct sockaddr *)&this->addr, sizeof(this->addr)) == -1) {
+        throw new SocketConnectException("connect");
+    }
+
+}
+
+/* THIS IS AN EXAMPLE OF READING 14 bytes to use later...
+void BasicSocket::readBytes(){
+    if(!this->isBound)
+        return;
+
+    while(1) {
+        int conn_sock;
+        socklen_t addrlen = sizeof(this->addr);
+        if((conn_sock = accept(this->sock_fd, (struct sockaddr *)&this->addr, &addrlen)) == -1) {
+            perror("Shit");
+            return;
+        }
+
+        char buf[14];
+        int bytes_read = read(conn_sock, buf, 14);
+        printf("%s\n", buf);
+    }
+}
+*/

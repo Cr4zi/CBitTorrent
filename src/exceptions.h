@@ -4,13 +4,13 @@
 #include <exception>
 #include <stdexcept>
 #include <string>
+#include <errno.h>
 
 class DecodeException : public std::runtime_error {
 public:
     DecodeException(const std::string& msg) :
         std::runtime_error(msg) {}
 };
-
 
 class EncodeException: public std::runtime_error {
 public:
@@ -28,6 +28,24 @@ class SocketCreationException : public std::runtime_error {
 public:
     SocketCreationException(const std::string& msg) :
         std::runtime_error(msg) {}
+};
+
+class SocketBindException : public std::runtime_error {
+public:
+    SocketBindException(const std::string& msg) :
+        std::runtime_error(msg) {}
+};
+
+class SocketListenException : public std::runtime_error {
+public:
+       SocketListenException(const std::string& msg) :
+            std::runtime_error(msg) {}
+};
+
+class SocketConnectException : public std::runtime_error {
+public:
+        SocketConnectException(const std::string& msg) :
+            std::runtime_error(msg) {}
 };
 
 #endif // EXCEPTIONS_H_
