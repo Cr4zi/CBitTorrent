@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <string.h>
 #include <openssl/sha.h>
 
 class TorrentFile {
@@ -17,6 +18,8 @@ public:
     ~TorrentFile();
 
     std::string calculateInfoHash();
+    // start means http or udp, for now http is only implemented
+    std::vector<std::string> getTrackers(std::string start);
 };
 
 #endif

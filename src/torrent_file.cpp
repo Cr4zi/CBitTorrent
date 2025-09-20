@@ -1,4 +1,8 @@
 #include "torrent_file.h"
+#include "bencode.h"
+#include "exceptions.h"
+#include <stdexcept>
+#include <variant>
 
 TorrentFile::TorrentFile(const std::string& filename) {
     // std::ios_base::binary open file in binary mode
@@ -24,11 +28,40 @@ std::string TorrentFile::calculateInfoHash() {
     unsigned char obuf[SHA_DIGEST_LENGTH];
     SHA1(ibuf, infoStr.size(), obuf);
 
-    std::ostringstream oss;
-    for(int i = 0; i < SHA_DIGEST_LENGTH; i++) {
-        // turning bytex for example 0x12 to 12 etc..., if 1 charcater add fill 0
-        oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(obuf[i]);
-    }
+    return std::string(reinterpret_cast<char *>(obuf), SHA_DIGEST_LENGTH);
+}
 
-    return oss.str();
+// safest function to ever exist (trust)
+std::vector<std::string> TorrentFile::getTrackers(std::string start) {
+    try {
+        /*
+        if(start != "http" || start != "udp")
+            throw new std::invalid_argument("get trackers");
+        */
+
+        auto it = this->dict.map.find("announce-list");
+        std::vector<std::string> vec;
+        std::string announce = std::get<std::string>(this->dict.map["announce"]);
+        if(announce.rfind(start, 0) == 0) {
+            announce.erase(0, start.length());
+            vec.push_back(announce);
+        }
+
+
+        if(it != this->dict.map.end()) {
+            std::vector<BencodeElement> list = std::get<BencodeList>(it->second).list;
+            for(BencodeElement ele : list) {
+                std::string value = std::get<std::string>(std::get<BencodeList>(ele).list[0]);
+
+                if(value.rfind(start, 0) == 0) {
+                    value.erase(0, start.length());
+                    vec.push_back(value);
+                }
+            }
+        }
+
+        return vec;
+    } catch(const std::bad_variant_access &e) {
+        throw new InvalidTorrentFile(e.what());
+    }
 }
