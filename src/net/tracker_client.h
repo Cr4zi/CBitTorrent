@@ -2,6 +2,7 @@
 #define PEER_DISCOVERY_H_
 
 #include "basic_socket.h"
+#include "tracker.h"
 #include "../torrent_file.h"
 #include "../globals.h"
 #include "../exceptions.h"
@@ -17,6 +18,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 /**
  * 1. Sending request to trackers

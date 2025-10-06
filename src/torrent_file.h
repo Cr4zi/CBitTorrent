@@ -19,7 +19,7 @@ public:
 
     std::string calculateInfoHash();
     // start means http or udp, for now http is only implemented
-    std::vector<std::string> getTrackers(std::string start);
+    std::vector<std::string> getTrackers();
 };
 
 #endif

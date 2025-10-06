@@ -72,4 +72,10 @@ public:
         std::runtime_error(msg) {}
 };
 
+class InvalidTrackerException : public std::runtime_error {
+public:
+    InvalidTrackerException(const std::string& msg) :
+        std::runtime_error(msg) {}
+};
+
 #endif // EXCEPTIONS_H_

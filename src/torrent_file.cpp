@@ -32,20 +32,12 @@ std::string TorrentFile::calculateInfoHash() {
 }
 
 // safest function to ever exist (trust)
-std::vector<std::string> TorrentFile::getTrackers(std::string start) {
+std::vector<std::string> TorrentFile::getTrackers() {
     try {
-        /*
-        if(start != "http" || start != "udp")
-            throw new std::invalid_argument("get trackers");
-        */
-
         auto it = this->dict.map.find("announce-list");
         std::vector<std::string> vec;
         std::string announce = std::get<std::string>(this->dict.map["announce"]);
-        if(announce.rfind(start, 0) == 0) {
-            announce.erase(0, start.length());
-            vec.push_back(announce);
-        }
+		vec.push_back(announce);
 
 
         if(it != this->dict.map.end()) {
@@ -53,10 +45,7 @@ std::vector<std::string> TorrentFile::getTrackers(std::string start) {
             for(BencodeElement ele : list) {
                 std::string value = std::get<std::string>(std::get<BencodeList>(ele).list[0]);
 
-                if(value.rfind(start, 0) == 0) {
-                    value.erase(0, start.length());
-                    vec.push_back(value);
-                }
+				vec.push_back(value);
             }
         }
 

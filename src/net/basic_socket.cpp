@@ -57,7 +57,7 @@ void BasicSocket::listenSocket(int backlog) {
 }
 
 // when doing the UDP should add another parameter for type of socket
-int BasicSocket::connectSocket(const char* host, int port) {
+int BasicSocket::connectSocket(const char* host, uint16_t port) {
     memset(&this->addr, 0, sizeof(this->addr));
     this->addr.sin_family = this->domain;
     this->addr.sin_port = htons(port);
@@ -71,7 +71,7 @@ int BasicSocket::connectSocket(const char* host, int port) {
     struct addrinfo *result, *rp;
 
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = this->domain;
+    hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = 0;
     hints.ai_protocol = this->protocol;
@@ -80,10 +80,10 @@ int BasicSocket::connectSocket(const char* host, int port) {
     if(s != 0) {
         throw new SocketConnectException("getaddrinfo");
     }
-    int ret;
 
+    int ret, sfd;
     for(rp = result; rp != NULL; rp = rp->ai_next) {
-        this->sock_fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 
         if(this->sock_fd == -1)
             continue;
@@ -96,9 +96,10 @@ int BasicSocket::connectSocket(const char* host, int port) {
 
     freeaddrinfo(result);
 
-    if(rp == NULL) {
+    if(rp == NULL)
         throw new SocketConnectException("Failed to find addr/connect");
-    }
+
+    this->sock_fd = sfd;
 
     return ret;
 }

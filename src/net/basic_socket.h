@@ -15,10 +15,11 @@ class BasicSocket {
 private:
     int domain, type, protocol;
 
-    int sock_fd;
     struct sockaddr_in addr;
 
     bool isBound = false;
+protected:
+    int sock_fd;
 public:
     BasicSocket(int domain, int type, int protocol, bool non_blocking = true);
     ~BasicSocket();
@@ -30,7 +31,7 @@ public:
     void bindSocket(int port);
     void listenSocket(int backlog);
 
-    int connectSocket(const char *host, int port);
+    int connectSocket(const char *host, uint16_t port);
 
     void sendBytes(const char *msg);
     unsigned int readBytes(char *buf);

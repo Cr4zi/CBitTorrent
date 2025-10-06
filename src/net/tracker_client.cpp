@@ -1,8 +1,10 @@
 #include "tracker_client.h"
+#include "tracker.h"
 #include <cctype>
 #include <cerrno>
 #include <cstdio>
-#include <unordered_map>
+#include <stdexcept>
+#include <sys/socket.h>
 
 
 void TrackerClient::generate_peer_id() {
@@ -84,81 +86,122 @@ TrackerClient::TrackerClient(TorrentFile& file) : file(file) {
 }
 
 void TrackerClient::tracker_request(Event ev) {
-    std::unordered_map<int, std::string> fd_to_hostname;
-
     // for now only http
-    std::vector<std::string> trackers = file.getTrackers(std::string("http://"));
-    std::cout << "--Trackers--" << std::endl;
+    std::vector<std::string> trackers = file.getTrackers();
+    // std::cout << "--Trackers--" << std::endl;
 
+    /*
     for(std::string tracker : trackers) {
         std::cout << tracker << std::endl;
     }
+    */
 
     int len = trackers.size() < Globals::MAX_CONNECTIONS ? trackers.size() : Globals::MAX_CONNECTIONS;
 
     int events_ready;
-    struct epoll_event einf[len], events[len];
-    std::vector<BasicSocket> sockets;
+    struct epoll_event events[len];
+    std::vector<Tracker> sockets;
 
     int epoll_fd = epoll_create1(0);
     if(epoll_fd == -1) {
         throw new EpollException("epoll_create1");
     }
 
+    int sockets_index = 0;
+    int good_trackers = 0;
     // SOCK_STREAM because currently HTTP
-    for(int i = 0; i < len; i++) {
-        sockets.push_back(BasicSocket(AF_INET, SOCK_STREAM, 0, true));
-
-        size_t colon = trackers[i].find(':');
-
-        // invalid tracker
-        if(std::string::npos == colon)
+    // quit if we loop through everything or we managed to connect to 2 trackers
+    for(int i = 0; i < len && good_trackers < 2; i++) {
+        std::cout << i << std::endl;
+        try {
+            sockets.emplace_back(Tracker(AF_INET, SOCK_STREAM, 0, trackers[i]));
+        } catch (InvalidTrackerException* e) {
+            // std::cerr << "Couldn't create a tracker" << e->what() << std::endl;
             continue;
-
-        std::string hostname = trackers[i].substr(0, colon);
-        int port;
-        std::string portStr = trackers[i].substr(colon + 1); // it is actually port/announce so now we remove announce
-        size_t slash = portStr.find('/');
-
-        if(std::string::npos == slash)
-            port = std::stoi(portStr.c_str());
-        else
-            port = std::stoi(portStr.substr(0, slash).c_str());
-
-        if(sockets[i].connectSocket(hostname.c_str(), port) == 0) {
-            sockets[i].sendBytes(this->prepare_request(hostname, ev).c_str());
-        } else if(errno == EINPROGRESS) {
-            einf[i].events = EPOLLOUT | EPOLLIN;
-            einf[i].data.fd = sockets[i].getSockFd();
-
-            if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sockets[i].getSockFd(), &einf[i]) == -1) {
-                std::cerr << "Couldn't add epoll" << std::endl; // I don't think we should end the program if this happens
-            }
-        } else {
-            std::cerr << "Failed to connect to " << hostname << ":" << port << std::endl;
         }
 
-        fd_to_hostname.insert({sockets[i].getSockFd(), hostname});
+        struct epoll_event ev;
+        ev.events = EPOLLIN | EPOLLOUT;
+        ev.data.fd = sockets[sockets_index].getSockFd();
+
+        bool success; // assuming that we connect successfully
+
+        std::cout << "Trying to connect to: " << sockets[sockets_index].get_host() << std::endl;
+        try {
+            if(sockets[sockets_index].connect() == 0)
+                success = true;
+            else if(errno == EINPROGRESS)
+                success = false;
+            else {
+                sockets.pop_back();
+                continue;
+            }
+            std::cout << "Finished connecting " << success << std::endl;
+        } catch(SocketConnectException* e) {
+            std::cerr << "Couldn't connect: " << e->what() << std::endl;
+            sockets.pop_back();
+            continue;
+        }
+        std::cout << "Fd: " << sockets[sockets_index].getSockFd() << " index: " << sockets_index << std::endl;
+
+        if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sockets[sockets_index].getSockFd(), &ev) == -1)
+            sockets[sockets_index].state = ERROR;
+        else {
+            sockets[sockets_index].state = success ? SENDING : CONNECTING;
+            good_trackers++;
+        }
+
+        sockets_index++;
+    }
+    if(sockets.size() <= 0) {
+        std::cerr << "Couldn't connect to trackers..." << std::endl;
+        return;
+    }
+
+    for(int i = 0; i < sockets.size(); i++) {
+        std::cout << "Sockets fd: " << sockets[i].getSockFd() << std::endl;
     }
 
     while(true) {
-        events_ready = epoll_wait(epoll_fd, events, Globals::MAX_CONNECTIONS, 3000);
+        events_ready = epoll_wait(epoll_fd, events, sockets.size(), 0);
+        //std::cout << "Events ready: " << events_ready << std::endl;
+        //std::cout << "Errno: " << errno << std::endl;
+        //std::cout << sockets.size() << std::endl;
 
         for(int i = 0; i < events_ready; i++) {
-            BasicSocket* sock = nullptr;
-            for(size_t j = 0; j < sockets.size(); j++) {
-                if(sockets[j].getSockFd() == events[i].data.fd) {
-                    sock = &sockets[j];
+            int fd = events[i].data.fd;
+            // std::cout << "Fd: " << fd << std::endl;
+            const auto it = std::find_if(sockets.begin(), sockets.end(), [fd](Tracker tracker) {
+                return tracker.getSockFd() == fd;
+            });
+
+            if(it == sockets.end())
+                continue;
+
+            Tracker tracker = *it;
+
+            std::cout << "Here: " << tracker.get_host() << events[i].events <<std::endl;
+
+            if(tracker.state == CONNECTING && events[i].events & EPOLLOUT) {
+                int err{};
+                socklen_t len = sizeof(err);
+                getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len);
+                if(err == 0)
+                    tracker.state = SENDING;
+                else {
+                    tracker.state = ERROR;
+                    std::cerr << "Failed to connect to: " << tracker.get_host() << std::endl;
                 }
             }
 
-            if(events[i].events & EPOLLOUT) {
-                std::cout << "Sending: " << events[i].data.fd << std::endl;
-                sock->sendBytes(this->prepare_request(fd_to_hostname[events[i].data.fd], ev).c_str());
-            } else if(events[i].events & EPOLLOUT) {
+            if(tracker.state == SENDING && events[i].events & EPOLLOUT) {
+                std::cout << "Sending: " << fd << " To: " << tracker.get_host() << std::endl;
+                tracker.sendBytes(this->prepare_request(tracker.get_host(), STARTED).c_str());
+                tracker.state = RECEIVING;
+            } else if(tracker.state == RECEIVING && events[i].events & EPOLLIN) {
                 char *buf;
-                sock->readBytes(buf);
-                std::cout << "Recv: " << buf << "from" << fd_to_hostname[events[i].data.fd] << std::endl;
+                tracker.readBytes(buf);
+                std::cout << "Recv: " << buf << " from: " << tracker.get_host() << std::endl;
             }
         }
     }
