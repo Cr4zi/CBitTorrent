@@ -19,12 +19,14 @@ private:
     void parse_port(std::string portStr);
     void parse_url();
 public:
+    State state;
+
     Tracker(int domain, int type, int protocol, std::string tracker_url)
         : BasicSocket(domain, type, protocol, true), tracker_url(tracker_url) {
         this->parse_url();
     }
 
-    State state;
+    ~Tracker() { close(this->sock_fd); }
 
     std::string get_host() { return this->host; }
 
