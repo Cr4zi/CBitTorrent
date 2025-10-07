@@ -92,7 +92,10 @@ int BasicSocket::connectSocket(const char* host, uint16_t port) {
     if(rp == NULL)
         throw new SocketConnectException("Failed to find addr/connect");
 
-    close(this->sock_fd);
+    std::cout << "sfd: " << sfd << std::endl;
+    // std::cout << "sock_fd: " << this->sock_fd << std::endl;
+    if(this->sock_fd != -1 && this->sock_fd != sfd)
+        close(this->sock_fd);
     this->sock_fd = sfd;
 
     return ret;

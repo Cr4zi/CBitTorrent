@@ -19,6 +19,7 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <memory>
 
 /**
  * 1. Sending request to trackers

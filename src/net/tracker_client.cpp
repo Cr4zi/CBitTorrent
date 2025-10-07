@@ -100,7 +100,7 @@ void TrackerClient::tracker_request(Event ev) {
 
     int events_ready;
     struct epoll_event events[len];
-    std::vector<Tracker> sockets;
+    std::vector<std::shared_ptr<Tracker>> sockets;
 
     int epoll_fd = epoll_create1(0);
     if(epoll_fd == -1) {
@@ -113,12 +113,12 @@ void TrackerClient::tracker_request(Event ev) {
     // quit if we loop through everything or we managed to connect to 2 trackers
     for(int i = 0; i < len && good_trackers < 2; i++) {
         try {
-            Tracker tracker = Tracker(AF_INET, SOCK_STREAM, 0, trackers[i]);
+            std::shared_ptr<Tracker> tracker = std::make_shared<Tracker>(AF_INET, SOCK_STREAM, 0, trackers[i]);
 
 			bool success; // assuming that we connect successfully
 
 			try {
-				if(tracker.connect() == 0)
+				if(tracker->connect() == 0)
 					success = true;
 				else if(errno == EINPROGRESS)
 					success = false;
@@ -132,18 +132,17 @@ void TrackerClient::tracker_request(Event ev) {
 				sockets.pop_back();
 				continue;
 			}
-			// std::cout << "Fd: " << sockets[sockets_index].getSockFd() << " index: " << sockets_index << std::endl;
 			struct epoll_event ev;
 			ev.events = EPOLLIN | EPOLLOUT;
-			ev.data.fd = tracker.getSockFd();
+			ev.data.fd = tracker->getSockFd();
 
-			if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, tracker.getSockFd(), &ev) == -1)
-				tracker.state = ERROR;
+			if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, tracker->getSockFd(), &ev) == -1)
+				tracker->state = ERROR;
 			else {
-				tracker.state = success ? SENDING : CONNECTING;
+				tracker->state = success ? SENDING : CONNECTING;
 				good_trackers++;
 			}
-			sockets.push_back(tracker);
+			sockets.emplace_back(tracker);
 
 			sockets_index++;
         } catch (InvalidTrackerException* e) {
@@ -156,51 +155,53 @@ void TrackerClient::tracker_request(Event ev) {
         return;
     }
 
+	for(size_t i = 0; i < sockets.size(); i++) {
+		std::cout << "fd: " << sockets[i]->getSockFd() << " host: " << sockets[i]->get_host() << " state: "  << sockets[i]->state << std::endl;
+	}
+
     while(true) {
         events_ready = epoll_wait(epoll_fd, events, sockets.size(), 0);
         // std::cout << "Events ready: " << events_ready << std::endl;
-        //std::cout << "Errno: " << errno << std::endl;
-        //std::cout << sockets.size() << std::endl;
 
         for(int i = 0; i < events_ready; i++) {
             int fd = events[i].data.fd;
-            // std::cout << "Fd: " << fd << std::endl;
-            const auto it = std::find_if(sockets.begin(), sockets.end(), [fd](Tracker tracker) {
-                return tracker.getSockFd() == fd;
+            const auto it = std::find_if(sockets.begin(), sockets.end(), [fd](std::shared_ptr<Tracker> tracker) {
+                return tracker->getSockFd() == fd;
             });
 
             if(it == sockets.end())
                 continue;
 
-            Tracker tracker = *it;
+            std::shared_ptr<Tracker> tracker = *it;
 
-            std::cout << "Here: " << tracker.get_host() << events[i].events <<std::endl;
-
-            if(tracker.state == CONNECTING && events[i].events & EPOLLOUT) {
+            if(tracker->state == CONNECTING && events[i].events & EPOLLOUT) {
                 int err{};
                 socklen_t len = sizeof(err);
                 getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len);
-                if(err == 0)
-                    tracker.state = SENDING;
-                else {
-                    tracker.state = ERROR;
-                    std::cerr << "Failed to connect to: " << tracker.get_host() << std::endl;
+                if(err == 0) {
+					
+					std::cout << "Connected successfully " << fd << std::endl;
+                    tracker->state = SENDING;
+				} else {
+                    tracker->state = ERROR;
+                    std::cerr << "Failed to connect to: " << tracker->get_host() << std::endl;
                 }
             }
 
-            if(tracker.state == SENDING && events[i].events & EPOLLOUT) {
-                std::cout << "Sending: " << fd << " To: " << tracker.get_host() << std::endl;
+            if(tracker->state == SENDING && events[i].events & EPOLLOUT) {
+                std::cout << "Sending: " << fd << " To: " << tracker->get_host() << std::endl;
 				try {
 					
-					tracker.sendBytes(this->prepare_request(tracker.get_host(), STARTED).c_str());
+					tracker->sendBytes(this->prepare_request(tracker->get_host(), STARTED).c_str());
+					tracker->state = RECEIVING;
 				} catch(SendingBytesFailedException* e) {
 					std::cout << e->what() << std::endl;
 				}
-                // tracker.state = RECEIVING;
-            } else if(tracker.state == RECEIVING && events[i].events & EPOLLIN) {
+            } else if(tracker->state == RECEIVING && events[i].events & EPOLLIN) {
                 char *buf;
-                tracker.readBytes(buf);
-                std::cout << "Recv: " << buf << " from: " << tracker.get_host() << std::endl;
+                tracker->readBytes(buf);
+                std::cout << "Recv: " << buf << " from: " << tracker->get_host() << std::endl;
+				tracker->state = DONE;
             }
         }
     }
