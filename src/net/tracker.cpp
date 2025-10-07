@@ -6,9 +6,9 @@ void Tracker::parse_port(std::string portStr) {
     if(ec == std::errc())
         this->port = port;
     else if(ec == std::errc::invalid_argument)
-        throw new InvalidTrackerException("Port is not a number");
+        throw InvalidTrackerException("Port is not a number");
     else if(ec == std::errc::result_out_of_range)
-            throw new InvalidTrackerException("Port is not inside unsigned 16 bit int range");
+        throw InvalidTrackerException("Port is not inside unsigned 16 bit int range");
 }
 
 void Tracker::parse_url() {
@@ -16,16 +16,15 @@ void Tracker::parse_url() {
 	std::string start = "http://";
 	if(this->tracker_url.find(start, 0) != 0) {
 
-        throw new InvalidTrackerException("Doesn't start with http://");
+        throw InvalidTrackerException("Doesn't start with http://");
 	}
 	this->tracker_url.erase(0, start.length());
-
 
     size_t colon = this->tracker_url.find(':');
 
     // invalid tracker
     if(std::string::npos == colon)
-        throw new InvalidTrackerException("No port...");
+        throw InvalidTrackerException("No port...");
 
     this->host = this->tracker_url.substr(0, colon);
     std::string portStr = this->tracker_url.substr(colon + 1); // it is actually port/announce so now we remove announce

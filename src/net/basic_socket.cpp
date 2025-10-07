@@ -41,7 +41,7 @@ void BasicSocket::bindSocket(int port) {
     this->addr.sin_port = htons(port);
 
     if(bind(this->sock_fd, (struct sockaddr *)&this->addr, sizeof(this->addr)) == -1) {
-        throw new SocketBindException("In bindSocket");
+        throw SocketBindException("In bindSocket");
     }
 
     this->isBound = true;
@@ -49,11 +49,11 @@ void BasicSocket::bindSocket(int port) {
 
 void BasicSocket::listenSocket(int backlog) {
     if(!this->isBound) {
-        throw new SocketListenException("Socket is not binded");
+        throw SocketListenException("Socket is not binded");
     }
 
     if(listen(this->sock_fd, backlog) == -1) {
-        throw new SocketListenException("Listen");
+        throw SocketListenException("Listen");
     }
 }
 
@@ -70,7 +70,7 @@ int BasicSocket::connectSocket(const char* host, uint16_t port) {
 
     int s = getaddrinfo(host, std::to_string(port).c_str(), &hints, &result);
     if(s != 0) {
-        throw new SocketConnectException("getaddrinfo");
+        throw SocketConnectException("getaddrinfo");
     }
 
     int ret, sfd;
@@ -90,7 +90,7 @@ int BasicSocket::connectSocket(const char* host, uint16_t port) {
     freeaddrinfo(result);
 
     if(rp == NULL)
-        throw new SocketConnectException("Failed to find addr/connect");
+        throw SocketConnectException("Failed to find addr/connect");
 
     if(this->sock_fd != -1 && this->sock_fd != sfd)
         close(this->sock_fd);
@@ -102,15 +102,15 @@ int BasicSocket::connectSocket(const char* host, uint16_t port) {
 void BasicSocket::sendBytes(std::string &msg) {
     if(send(this->sock_fd, msg.c_str(), msg.size(), 0) == -1) {
         if(errno == EAGAIN || errno == EWOULDBLOCK)
-            throw new SendingBytesFailedException("write EAGAIN or EWOULDBLOCK");
+            throw SendingBytesFailedException("write EAGAIN or EWOULDBLOCK");
         else
-            throw new SendingBytesFailedException("write");
+            throw SendingBytesFailedException("write");
     }
 }
 
 char *BasicSocket::readBytes(ssize_t &bytes_read) {
     if(bytes_read != 0)
-        throw new ReadingBytesFailedException("bytes read should be 0");
+        throw ReadingBytesFailedException("bytes read should be 0");
 
     ssize_t current_bytes_read = 0;
 
@@ -118,7 +118,7 @@ char *BasicSocket::readBytes(ssize_t &bytes_read) {
     char *data = (char *)malloc(len * sizeof(char)); // yeah I know sizeof(char) = 1, but 
 
     if(!data)
-        throw new ReadingBytesFailedException("malloc");
+        throw ReadingBytesFailedException("malloc");
 
     while((current_bytes_read = read(this->sock_fd, data + bytes_read, len - bytes_read)) > 0) {
         bytes_read += current_bytes_read;
@@ -136,9 +136,9 @@ char *BasicSocket::readBytes(ssize_t &bytes_read) {
 
     if(current_bytes_read == -1) {
         if(errno == EAGAIN || errno == EWOULDBLOCK)
-            throw new ReadingBytesFailedException("read EAGAIN or EWOULDBLOCK");
+            throw ReadingBytesFailedException("read EAGAIN or EWOULDBLOCK");
         else
-            throw new ReadingBytesFailedException("read");
+            throw ReadingBytesFailedException("read");
     }
 
     return data;
