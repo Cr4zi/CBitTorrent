@@ -1,7 +1,6 @@
 #include "basic_socket.h"
 #include <cerrno>
 #include <netdb.h>
-#include <iostream>
 
 BasicSocket::BasicSocket(int domain, int type, int protocol, bool non_blocking) {
     this->sock_fd = socket(domain, type, protocol);
@@ -92,8 +91,6 @@ int BasicSocket::connectSocket(const char* host, uint16_t port) {
     if(rp == NULL)
         throw new SocketConnectException("Failed to find addr/connect");
 
-    std::cout << "sfd: " << sfd << std::endl;
-    // std::cout << "sock_fd: " << this->sock_fd << std::endl;
     if(this->sock_fd != -1 && this->sock_fd != sfd)
         close(this->sock_fd);
     this->sock_fd = sfd;
