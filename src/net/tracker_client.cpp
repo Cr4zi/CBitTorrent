@@ -1,11 +1,8 @@
 #include "tracker_client.h"
 #include "tracker.h"
-#include <cctype>
 #include <cerrno>
 #include <cstdio>
-#include <stdexcept>
 #include <sys/socket.h>
-#include <bitset>
 
 
 void TrackerClient::generate_peer_id() {
@@ -202,7 +199,7 @@ void TrackerClient::tracker_request(Event ev) {
 					char *buf = tracker->readBytes(bytes_read);
 					tracker->state = DONE;
 					data.assign(buf, bytes_read);
-					std::cout << buf << std::endl;
+					std::cout << "Read Bytes: "<< bytes_read << std::endl;
 					free(buf);
 					
 				} catch(ReadingBytesFailedException* e) {
