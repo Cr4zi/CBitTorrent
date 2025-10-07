@@ -1,6 +1,7 @@
 #include "basic_socket.h"
 #include <cerrno>
 #include <netdb.h>
+#include <iostream>
 
 BasicSocket::BasicSocket(int domain, int type, int protocol, bool non_blocking) {
     this->sock_fd = socket(domain, type, protocol);
@@ -98,8 +99,8 @@ int BasicSocket::connectSocket(const char* host, uint16_t port) {
     return ret;
 }
 
-void BasicSocket::sendBytes(const char *msg) {
-    if(write(this->sock_fd, msg, sizeof(msg)) == -1) {
+void BasicSocket::sendBytes(std::string &msg) {
+    if(send(this->sock_fd, msg.c_str(), msg.size(), 0) == -1) {
         if(errno == EAGAIN || errno == EWOULDBLOCK)
             throw new SendingBytesFailedException("write EAGAIN or EWOULDBLOCK");
         else
@@ -107,39 +108,38 @@ void BasicSocket::sendBytes(const char *msg) {
     }
 }
 
-unsigned int BasicSocket::readBytes(char *buf) {
-    ssize_t total_bytes_read = 0, bytes_read = 0;
+char *BasicSocket::readBytes(ssize_t &bytes_read) {
+    if(bytes_read != 0)
+        throw new ReadingBytesFailedException("bytes read should be 0");
 
-    ssize_t len = 1024;
-    char *data = (char *)malloc(len * sizeof(char));
+    ssize_t current_bytes_read = 0;
+
+    ssize_t len = 1024; // could be more or less, it just the amount of bytes each chunk will be...
+    char *data = (char *)malloc(len * sizeof(char)); // yeah I know sizeof(char) = 1, but 
+
     if(!data)
-        return total_bytes_read;
+        throw new ReadingBytesFailedException("malloc");
 
-    while((bytes_read = read(this->sock_fd, data + total_bytes_read, len - total_bytes_read)) >= 0) {
-        total_bytes_read += bytes_read;
+    while((current_bytes_read = read(this->sock_fd, data + bytes_read, len - bytes_read)) > 0) {
+        bytes_read += current_bytes_read;
 
-        if(total_bytes_read == len) {
+        if(bytes_read == len) {
             len *= 2;
             char *temp = (char *)realloc(data, len);
             if(!temp) {
-                free(data);
-                return 0;
+                return data;
             }
+            // we don't need to free cuz realloc does that
             data = temp;
         }
-
     }
 
-    if(bytes_read == -1) {
+    if(current_bytes_read == -1) {
         if(errno == EAGAIN || errno == EWOULDBLOCK)
             throw new ReadingBytesFailedException("read EAGAIN or EWOULDBLOCK");
         else
             throw new ReadingBytesFailedException("read");
     }
 
-    buf = (char *)malloc(total_bytes_read + 1);
-    memcpy(buf, data, total_bytes_read);
-    buf[total_bytes_read] = '\0';
-
-    return total_bytes_read;
+    return data;
 }

@@ -33,8 +33,10 @@ public:
 
     int connectSocket(const char *host, uint16_t port);
 
-    void sendBytes(const char *msg);
-    unsigned int readBytes(char *buf);
+    void sendBytes(std::string &msg);
+
+    // when calling this function bytesRead should be 0
+    char *readBytes(ssize_t &bytes_read);
 
 };
 
