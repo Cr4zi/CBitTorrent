@@ -1,9 +1,7 @@
 #include "tracker_client.h"
 #include "tracker.h"
-#include <cctype>
 #include <cerrno>
 #include <cstdio>
-#include <stdexcept>
 #include <sys/socket.h>
 
 
@@ -39,10 +37,7 @@ std::string TrackerClient::percent_encode(std::string& str) const {
     std::ostringstream oss;
     oss << std::uppercase << std::hex;
     for(unsigned char c : str) {
-        if(std::isalpha(c) || std::isdigit(c) || c == '.' || c == '-' || c == '_' || c == '~')
-            oss << c;
-        else
-            oss << '%' << std::setw(2) << std::setfill('0') << static_cast<int>(c);
+		oss << '%' << std::setw(2) << std::setfill('0') << static_cast<int>(c);
     }
 
     return oss.str();
@@ -75,7 +70,7 @@ std::string TrackerClient::prepare_request(std::string host, Event ev) {
     // for now uploaded, downloaded and left are 0
     stream << "GET /announce?info_hash=" << this->percent_encode(hash) << "&peer_id="
         << this->peer_id << "&port=" << Globals::PORT << "&uploaded=" << 0 << "&downloaded=" << 0 << "&left=" << 0
-           << "&compact=1" << event << " HTTP/1.1\r\nHost: " << host << "\r\nUser-Agent: CBitTorrent/0.1\r\nConnection: close\r\n";
+           << "&compact=1" << event << " HTTP/1.1\r\nHost: " << host << "\r\nUser-Agent: CBitTorrent/0.1\r\nConnection: close\r\n\r\n";
 
     return stream.str();
 }
@@ -110,8 +105,7 @@ void TrackerClient::tracker_request(Event ev) {
     int sockets_index = 0;
     int good_trackers = 0;
     // SOCK_STREAM because currently HTTP
-    // quit if we loop through everything or we managed to connect to 2 trackers
-    for(int i = 0; i < len && good_trackers < 2; i++) {
+    for(int i = 0; i < len; i++) {
         try {
             std::shared_ptr<Tracker> tracker = std::make_shared<Tracker>(AF_INET, SOCK_STREAM, 0, trackers[i]);
 
@@ -188,20 +182,29 @@ void TrackerClient::tracker_request(Event ev) {
                 }
             }
 
-            if(tracker->state == SENDING && events[i].events & EPOLLOUT) {
+			if(tracker->state == SENDING && events[i].events & EPOLLOUT) {
                 std::cout << "Sending: " << fd << " To: " << tracker->get_host() << std::endl;
 				try {
-					
-					tracker->sendBytes(this->prepare_request(tracker->get_host(), STARTED).c_str());
+					std::string request = this->prepare_request(tracker->get_host(), STARTED);
+					tracker->sendBytes(request);
 					tracker->state = RECEIVING;
 				} catch(SendingBytesFailedException* e) {
 					std::cout << e->what() << std::endl;
 				}
             } else if(tracker->state == RECEIVING && events[i].events & EPOLLIN) {
-                char *buf;
-                tracker->readBytes(buf);
-                std::cout << "Recv: " << buf << " from: " << tracker->get_host() << std::endl;
-				tracker->state = DONE;
+				std::cout << "Reading: " << fd << " From: " << tracker->get_host() << std::endl;
+				ssize_t bytes_read = 0;
+				try {
+					std::string data;
+					char *buf = tracker->readBytes(bytes_read);
+					tracker->state = DONE;
+					data.assign(buf, bytes_read);
+					std::cout << "Read Bytes: "<< bytes_read << std::endl;
+					free(buf);
+					
+				} catch(ReadingBytesFailedException* e) {
+					std::cerr << e->what() << "errno: " << errno << std::endl;
+				}
             }
         }
     }
