@@ -1,6 +1,7 @@
 #include "basic_socket.h"
 #include <cerrno>
 #include <netdb.h>
+#include <iostream>
 
 BasicSocket::BasicSocket(int domain, int type, int protocol, bool non_blocking) {
     this->sock_fd = socket(domain, type, protocol);
@@ -58,26 +59,14 @@ void BasicSocket::listenSocket(int backlog) {
 
 // when doing the UDP should add another parameter for type of socket
 int BasicSocket::connectSocket(const char* host, uint16_t port) {
-    memset(&this->addr, 0, sizeof(this->addr));
-    this->addr.sin_family = this->domain;
-    this->addr.sin_port = htons(port);
-
-    /* success */
-    if(inet_pton(this->domain, host, &this->addr.sin_addr) == 1) {
-        return connect(this->sock_fd, (struct sockaddr *)&this->addr, sizeof(this->addr));
-    }
-
     struct addrinfo hints;
     struct addrinfo *result, *rp;
 
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
+    hints.ai_family = this->domain;
     hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE;
-    hints.ai_protocol = this->protocol;
-    hints.ai_canonname = NULL;
-    hints.ai_addr = NULL;
-    hints.ai_next = NULL;
+    hints.ai_flags = 0;
+    hints.ai_protocol = 0;
 
     int s = getaddrinfo(host, std::to_string(port).c_str(), &hints, &result);
     if(s != 0) {
@@ -87,14 +76,15 @@ int BasicSocket::connectSocket(const char* host, uint16_t port) {
     int ret, sfd;
     for(rp = result; rp != NULL; rp = rp->ai_next) {
         sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        this->set_nonblocking(sfd);
 
-        if(this->sock_fd == -1)
+        if(sfd == -1)
             continue;
 
-        if((ret = connect(this->sock_fd, rp->ai_addr, rp->ai_addrlen)) != -1 || errno == EINPROGRESS)
+        if((ret = connect(sfd, rp->ai_addr, rp->ai_addrlen)) != -1 || errno == EINPROGRESS)
             break;
 
-        close(this->sock_fd);
+        close(sfd);
     }
 
     freeaddrinfo(result);
@@ -102,6 +92,7 @@ int BasicSocket::connectSocket(const char* host, uint16_t port) {
     if(rp == NULL)
         throw new SocketConnectException("Failed to find addr/connect");
 
+    close(this->sock_fd);
     this->sock_fd = sfd;
 
     return ret;

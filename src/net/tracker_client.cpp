@@ -112,59 +112,53 @@ void TrackerClient::tracker_request(Event ev) {
     // SOCK_STREAM because currently HTTP
     // quit if we loop through everything or we managed to connect to 2 trackers
     for(int i = 0; i < len && good_trackers < 2; i++) {
-        std::cout << i << std::endl;
         try {
-            sockets.emplace_back(Tracker(AF_INET, SOCK_STREAM, 0, trackers[i]));
+            Tracker tracker = Tracker(AF_INET, SOCK_STREAM, 0, trackers[i]);
+
+			bool success; // assuming that we connect successfully
+
+			try {
+				if(tracker.connect() == 0)
+					success = true;
+				else if(errno == EINPROGRESS)
+					success = false;
+				else {
+					sockets.pop_back();
+					continue;
+				}
+				std::cout << "Finished connecting " << success << std::endl;
+			} catch(SocketConnectException* e) {
+				std::cerr << "Couldn't connect: " << e->what() << std::endl;
+				sockets.pop_back();
+				continue;
+			}
+			// std::cout << "Fd: " << sockets[sockets_index].getSockFd() << " index: " << sockets_index << std::endl;
+			struct epoll_event ev;
+			ev.events = EPOLLIN | EPOLLOUT;
+			ev.data.fd = tracker.getSockFd();
+
+			if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, tracker.getSockFd(), &ev) == -1)
+				tracker.state = ERROR;
+			else {
+				tracker.state = success ? SENDING : CONNECTING;
+				good_trackers++;
+			}
+			sockets.push_back(tracker);
+
+			sockets_index++;
         } catch (InvalidTrackerException* e) {
             // std::cerr << "Couldn't create a tracker" << e->what() << std::endl;
             continue;
         }
-
-        struct epoll_event ev;
-        ev.events = EPOLLIN | EPOLLOUT;
-        ev.data.fd = sockets[sockets_index].getSockFd();
-
-        bool success; // assuming that we connect successfully
-
-        std::cout << "Trying to connect to: " << sockets[sockets_index].get_host() << std::endl;
-        try {
-            if(sockets[sockets_index].connect() == 0)
-                success = true;
-            else if(errno == EINPROGRESS)
-                success = false;
-            else {
-                sockets.pop_back();
-                continue;
-            }
-            std::cout << "Finished connecting " << success << std::endl;
-        } catch(SocketConnectException* e) {
-            std::cerr << "Couldn't connect: " << e->what() << std::endl;
-            sockets.pop_back();
-            continue;
-        }
-        std::cout << "Fd: " << sockets[sockets_index].getSockFd() << " index: " << sockets_index << std::endl;
-
-        if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sockets[sockets_index].getSockFd(), &ev) == -1)
-            sockets[sockets_index].state = ERROR;
-        else {
-            sockets[sockets_index].state = success ? SENDING : CONNECTING;
-            good_trackers++;
-        }
-
-        sockets_index++;
     }
     if(sockets.size() <= 0) {
         std::cerr << "Couldn't connect to trackers..." << std::endl;
         return;
     }
 
-    for(int i = 0; i < sockets.size(); i++) {
-        std::cout << "Sockets fd: " << sockets[i].getSockFd() << std::endl;
-    }
-
     while(true) {
         events_ready = epoll_wait(epoll_fd, events, sockets.size(), 0);
-        //std::cout << "Events ready: " << events_ready << std::endl;
+        // std::cout << "Events ready: " << events_ready << std::endl;
         //std::cout << "Errno: " << errno << std::endl;
         //std::cout << sockets.size() << std::endl;
 
@@ -196,8 +190,13 @@ void TrackerClient::tracker_request(Event ev) {
 
             if(tracker.state == SENDING && events[i].events & EPOLLOUT) {
                 std::cout << "Sending: " << fd << " To: " << tracker.get_host() << std::endl;
-                tracker.sendBytes(this->prepare_request(tracker.get_host(), STARTED).c_str());
-                tracker.state = RECEIVING;
+				try {
+					
+					tracker.sendBytes(this->prepare_request(tracker.get_host(), STARTED).c_str());
+				} catch(SendingBytesFailedException* e) {
+					std::cout << e->what() << std::endl;
+				}
+                // tracker.state = RECEIVING;
             } else if(tracker.state == RECEIVING && events[i].events & EPOLLIN) {
                 char *buf;
                 tracker.readBytes(buf);
