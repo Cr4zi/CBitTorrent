@@ -73,8 +73,11 @@ int BasicSocket::connectSocket(const char* host, uint16_t port) {
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = 0;
+    hints.ai_flags = AI_PASSIVE;
     hints.ai_protocol = this->protocol;
+    hints.ai_canonname = NULL;
+    hints.ai_addr = NULL;
+    hints.ai_next = NULL;
 
     int s = getaddrinfo(host, std::to_string(port).c_str(), &hints, &result);
     if(s != 0) {
