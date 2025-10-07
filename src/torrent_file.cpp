@@ -51,6 +51,6 @@ std::vector<std::string> TorrentFile::getTrackers() {
 
         return vec;
     } catch(const std::bad_variant_access &e) {
-        throw new InvalidTorrentFile(e.what());
+        throw InvalidTorrentFile(e.what());
     }
 }

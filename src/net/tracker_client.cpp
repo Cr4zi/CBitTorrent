@@ -83,13 +83,6 @@ TrackerClient::TrackerClient(TorrentFile& file) : file(file) {
 void TrackerClient::tracker_request(Event ev) {
     // for now only http
     std::vector<std::string> trackers = file.getTrackers();
-    // std::cout << "--Trackers--" << std::endl;
-
-    /*
-    for(std::string tracker : trackers) {
-        std::cout << tracker << std::endl;
-    }
-    */
 
     int len = trackers.size() < Globals::MAX_CONNECTIONS ? trackers.size() : Globals::MAX_CONNECTIONS;
 
@@ -99,7 +92,7 @@ void TrackerClient::tracker_request(Event ev) {
 
     int epoll_fd = epoll_create1(0);
     if(epoll_fd == -1) {
-        throw new EpollException("epoll_create1");
+        throw EpollException("epoll_create1");
     }
 
     int sockets_index = 0;
@@ -121,8 +114,8 @@ void TrackerClient::tracker_request(Event ev) {
 					continue;
 				}
 				std::cout << "Finished connecting " << success << std::endl;
-			} catch(SocketConnectException* e) {
-				std::cerr << "Couldn't connect: " << e->what() << std::endl;
+			} catch(const SocketConnectException& e) {
+				std::cerr << "Couldn't connect: " << e.what() << std::endl;
 				sockets.pop_back();
 				continue;
 			}
@@ -139,7 +132,7 @@ void TrackerClient::tracker_request(Event ev) {
 			sockets.emplace_back(tracker);
 
 			sockets_index++;
-        } catch (InvalidTrackerException* e) {
+        } catch (const InvalidTrackerException& e) {
             // std::cerr << "Couldn't create a tracker" << e->what() << std::endl;
             continue;
         }
@@ -188,8 +181,8 @@ void TrackerClient::tracker_request(Event ev) {
 					std::string request = this->prepare_request(tracker->get_host(), STARTED);
 					tracker->sendBytes(request);
 					tracker->state = RECEIVING;
-				} catch(SendingBytesFailedException* e) {
-					std::cout << e->what() << std::endl;
+				} catch(const SendingBytesFailedException& e) {
+					std::cout << e.what() << std::endl;
 				}
             } else if(tracker->state == RECEIVING && events[i].events & EPOLLIN) {
 				std::cout << "Reading: " << fd << " From: " << tracker->get_host() << std::endl;
@@ -202,8 +195,8 @@ void TrackerClient::tracker_request(Event ev) {
 					std::cout << "Read Bytes: "<< bytes_read << std::endl;
 					free(buf);
 					
-				} catch(ReadingBytesFailedException* e) {
-					std::cerr << e->what() << "errno: " << errno << std::endl;
+				} catch(const ReadingBytesFailedException& e) {
+					std::cerr << e.what() << " errno: " << errno << std::endl;
 				}
             }
         }
