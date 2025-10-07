@@ -26,14 +26,14 @@ struct BencodeDict {
     std::map<std::string, BencodeElement> map;
 };
 
-BencodeDict decodeFile(std::ifstream& input);
+BencodeDict decodeFile(std::istream& input);
 
-BencodeElement decodeInt(std::ifstream& input);
-BencodeElement decodeString(std::ifstream& input);
-BencodeList decodeList(std::ifstream& input);
-BencodeDict decodeDict(std::ifstream& input);
+BencodeElement decodeInt(std::istream& input);
+BencodeElement decodeString(std::istream& input);
+BencodeList decodeList(std::istream& input);
+BencodeDict decodeDict(std::istream& input);
 
-void consumeExpectedCharacter(std::ifstream& input, char expected);
+void consumeExpectedCharacter(std::istream& input, char expected);
 
 std::string encode(BencodeElement elem);
 std::string encodeInt(int64_t value);

@@ -3,7 +3,7 @@
 #include <variant>
 
 
-BencodeDict decodeFile(std::ifstream& input) {
+BencodeDict decodeFile(std::istream& input) {
     switch(input.peek()) {
         case 'd':
             return decodeDict(input);
@@ -12,7 +12,7 @@ BencodeDict decodeFile(std::ifstream& input) {
 }
 
 
-BencodeElement decodeInt(std::ifstream& input) {
+BencodeElement decodeInt(std::istream& input) {
     bool negative = false;
     int64_t num {};
     consumeExpectedCharacter(input, 'i');
@@ -38,7 +38,7 @@ BencodeElement decodeInt(std::ifstream& input) {
     return negative ? -num : num;
 }
 
-BencodeElement decodeString(std::ifstream& input) {
+BencodeElement decodeString(std::istream& input) {
     std::string result {};
     std::string::size_type length {};
 
@@ -61,7 +61,7 @@ BencodeElement decodeString(std::ifstream& input) {
     return result;
 }
 
-BencodeList decodeList(std::ifstream& input) {
+BencodeList decodeList(std::istream& input) {
     std::vector<BencodeElement> list;
     consumeExpectedCharacter(input, 'l');
 
@@ -97,7 +97,7 @@ BencodeList decodeList(std::ifstream& input) {
     return BencodeList{list};
 }
 
-BencodeDict decodeDict(std::ifstream& input) {
+BencodeDict decodeDict(std::istream& input) {
     std::map<std::string, BencodeElement> map {};
 
     consumeExpectedCharacter(input, 'd');
@@ -142,7 +142,7 @@ BencodeDict decodeDict(std::ifstream& input) {
     return BencodeDict {map};
 }
 
-void consumeExpectedCharacter(std::ifstream& input, char expected) {
+void consumeExpectedCharacter(std::istream& input, char expected) {
     char ch = input.get();
     if(ch != expected) {
         throw DecodeException(std::string(std::string("Expected character ") + expected).c_str());
