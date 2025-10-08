@@ -188,11 +188,10 @@ void TrackerClient::tracker_request(Event ev) {
 				std::cout << "Reading: " << fd << " From: " << tracker->get_host() << std::endl;
 				ssize_t bytes_read = 0;
 				try {
-					std::string data;
 					char *buf = tracker->readBytes(bytes_read);
 					tracker->state = DONE;
-					data.assign(buf, bytes_read);
 					std::cout << "Read Bytes: "<< bytes_read << std::endl;
+					std::string data(buf, bytes_read);
 					free(buf);
 					
 				} catch(const ReadingBytesFailedException& e) {
