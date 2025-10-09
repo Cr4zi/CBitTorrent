@@ -42,6 +42,8 @@ private:
     void generate_tracker_key_u32();
     std::string percent_encode(std::string& str) const;
     std::string prepare_request(std::string host, Event ev);
+    
+    bool is_everyone_done(std::vector<std::shared_ptr<Tracker>>& trackers);
 public:
     TrackerClient(TorrentFile& file);
 
