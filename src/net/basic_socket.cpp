@@ -108,30 +108,19 @@ void BasicSocket::sendBytes(std::string &msg) {
     }
 }
 
-char *BasicSocket::readBytes(ssize_t &bytes_read) {
+std::vector<char> BasicSocket::readBytes(ssize_t &bytes_read) {
     if(bytes_read != 0)
         throw ReadingBytesFailedException("bytes read should be 0");
 
     ssize_t current_bytes_read = 0;
 
-    ssize_t len = 1024; // could be more or less, it just the amount of bytes each chunk will be...
-    char *data = (char *)malloc(len * sizeof(char)); // yeah I know sizeof(char) = 1, but 
+    const ssize_t CHUNK = 1024; // could be more or less, it just the amount of bytes each chunk will be...
+    char buf[CHUNK];
+    std::vector<char> data;
 
-    if(!data)
-        throw ReadingBytesFailedException("malloc");
-
-    while((current_bytes_read = read(this->sock_fd, data + bytes_read, len - bytes_read)) > 0) {
+    while((current_bytes_read = read(this->sock_fd, buf, CHUNK)) > 0) {
         bytes_read += current_bytes_read;
-
-        if(bytes_read == len) {
-            len *= 2;
-            char *temp = (char *)realloc(data, len);
-            if(!temp) {
-                return data;
-            }
-            // we don't need to free cuz realloc does that
-            data = temp;
-        }
+        data.insert(data.end(), buf, buf + current_bytes_read);
     }
 
     if(current_bytes_read == -1) {

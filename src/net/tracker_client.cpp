@@ -2,7 +2,11 @@
 #include "tracker.h"
 #include <cerrno>
 #include <cstdio>
+#include <ios>
+#include <memory>
+#include <sstream>
 #include <sys/socket.h>
+#include <variant>
 
 
 void TrackerClient::generate_peer_id() {
@@ -68,9 +72,15 @@ std::string TrackerClient::prepare_request(std::string host, Event ev) {
     }
 
     // for now uploaded, downloaded and left are 0
-    stream << "GET /announce?info_hash=" << this->percent_encode(hash) << "&peer_id="
-        << this->peer_id << "&port=" << Globals::PORT << "&uploaded=" << 0 << "&downloaded=" << 0 << "&left=" << 0
-           << "&compact=1" << event << " HTTP/1.1\r\nHost: " << host << "\r\nUser-Agent: CBitTorrent/0.1\r\nConnection: close\r\n\r\n";
+    stream << "GET /announce?info_hash=" << this->percent_encode(hash)
+        << "&peer_id=" << this->peer_id
+        << "&port=" << Globals::PORT
+        << "&uploaded=" << 0
+        << "&downloaded=" << 0
+        << "&left=" << 0
+        << "&compact=1"
+        << event
+        << " HTTP/1.1\r\nHost: " << host << "\r\nUser-Agent: CBitTorrent/0.1\r\nConnection: close\r\n\r\n";
 
     return stream.str();
 }
@@ -78,6 +88,14 @@ std::string TrackerClient::prepare_request(std::string host, Event ev) {
 TrackerClient::TrackerClient(TorrentFile& file) : file(file) {
     this->generate_peer_id();
     this->generate_tracker_key_u32();
+}
+
+bool TrackerClient::is_everyone_done(std::vector<std::shared_ptr<Tracker>>& trackers) {
+    for(std::shared_ptr<Tracker> tracker : trackers)
+        if(tracker->state != DONE && tracker->state  != ERROR)
+            return false;
+
+    return true;
 }
 
 void TrackerClient::tracker_request(Event ev) {
@@ -146,7 +164,8 @@ void TrackerClient::tracker_request(Event ev) {
 		std::cout << "fd: " << sockets[i]->getSockFd() << " host: " << sockets[i]->get_host() << " state: "  << sockets[i]->state << std::endl;
 	}
 
-    while(true) {
+    int peers = 0;
+    while(peers < Globals::MAX_CONNECTIONS && !this->is_everyone_done(sockets)) {
         events_ready = epoll_wait(epoll_fd, events, sockets.size(), 0);
         // std::cout << "Events ready: " << events_ready << std::endl;
 
@@ -178,7 +197,7 @@ void TrackerClient::tracker_request(Event ev) {
 			if(tracker->state == SENDING && events[i].events & EPOLLOUT) {
                 std::cout << "Sending: " << fd << " To: " << tracker->get_host() << std::endl;
 				try {
-					std::string request = this->prepare_request(tracker->get_host(), STARTED);
+					std::string request = this->prepare_request(tracker->get_host(), ev);
 					tracker->sendBytes(request);
 					tracker->state = RECEIVING;
 				} catch(const SendingBytesFailedException& e) {
@@ -188,12 +207,13 @@ void TrackerClient::tracker_request(Event ev) {
 				std::cout << "Reading: " << fd << " From: " << tracker->get_host() << std::endl;
 				ssize_t bytes_read = 0;
 				try {
-					std::string data;
-					char *buf = tracker->readBytes(bytes_read);
+					std::vector<char> data = tracker->readBytes(bytes_read);
 					tracker->state = DONE;
-					data.assign(buf, bytes_read);
 					std::cout << "Read Bytes: "<< bytes_read << std::endl;
-					free(buf);
+                    if(bytes_read != 0) {
+                        int curr = tracker->generate_peers(data);
+                        peers += curr;
+                    }
 					
 				} catch(const ReadingBytesFailedException& e) {
 					std::cerr << e.what() << " errno: " << errno << std::endl;
@@ -201,4 +221,6 @@ void TrackerClient::tracker_request(Event ev) {
             }
         }
     }
+
+    std::cout << "Peers: " << peers << std::endl; 
 }

@@ -1,5 +1,5 @@
-#ifndef PEER_DISCOVERY_H_
-#define PEER_DISCOVERY_H_
+#ifndef TRACKER_CLIENT_H_ 
+#define TRACKER_CLIENT_H_ 
 
 #include "basic_socket.h"
 #include "tracker.h"
@@ -42,12 +42,13 @@ private:
     void generate_tracker_key_u32();
     std::string percent_encode(std::string& str) const;
     std::string prepare_request(std::string host, Event ev);
+    
+    bool is_everyone_done(std::vector<std::shared_ptr<Tracker>>& trackers);
 public:
     TrackerClient(TorrentFile& file);
-    std::vector<Peer> discover_peers();
 
     void tracker_request(Event ev);
 
 };
 
-#endif // PEER_DISCOVERY_H_
+#endif // TRACKER_CLIENT_H_

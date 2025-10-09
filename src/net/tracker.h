@@ -3,9 +3,18 @@
 
 #include "basic_socket.h"
 #include "../exceptions.h"
+#include "../peer.h"
+#include "../bencode.h"
+
+#include <algorithm>
 #include <string>
 #include <iostream>
 #include <charconv>
+#include <vector>
+#include <memory>
+#include <sstream>
+#include <map>
+#include <optional>
 
 enum State {
     CONNECTING, SENDING, RECEIVING, DONE, ERROR
@@ -13,11 +22,21 @@ enum State {
 
 class Tracker : public BasicSocket {
 private:
-    std::string tracker_url, host;
+    std::string tracker_url, host, tracker_id;
     uint16_t port;
-	
+    int64_t interval;
+
+    std::vector<std::shared_ptr<Peer>> peers;
+
+    template <typename T>
+    std::optional<T> get_from_map(BencodeDict dict, std::string key);
+
+    ssize_t parse_peers_list(BencodeList peers_dict);
+    ssize_t parse_peers_binary(std::string& peers_binary);
+    
     void parse_port(std::string portStr);
     void parse_url();
+
 public:
     State state;
 
@@ -28,7 +47,10 @@ public:
 
     ~Tracker() { close(this->sock_fd); }
 
+    ssize_t generate_peers(std::vector<char>& response);
+
     std::string get_host() { return this->host; }
+    std::vector<std::shared_ptr<Peer>> get_peers() { return this->peers; }
 
 	int connect();
 };
