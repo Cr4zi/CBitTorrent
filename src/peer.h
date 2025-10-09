@@ -13,6 +13,12 @@ public:
           ip(ip),
           port(port)
         {};
+
+    Peer(std::string ip, int port)
+        : peer_id(""),
+        ip(ip),
+        port(port)
+        {};
 };
 
 #endif // PEER_H_
