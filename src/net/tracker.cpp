@@ -99,10 +99,11 @@ ssize_t Tracker::parse_peers_binary(std::string& peers_binary) { // inshalla thi
 	for(size_t i = 0; i < peers_binary.size(); i+=6) {
 		std::ostringstream ip_stream;
 		for(int j = 0; j < 3; j++)
-			ip_stream << static_cast<unsigned>(static_cast<unsigned char>(peers_binary[i+j])) << '.';
-		ip_stream << static_cast<unsigned>(static_cast<unsigned char>(peers_binary[i+3]));
+			ip_stream << static_cast<unsigned int>(static_cast<unsigned char>(peers_binary[i+j])) << '.';
+		ip_stream << static_cast<unsigned int>(static_cast<unsigned char>(peers_binary[i+3]));
 
 		uint16_t port = (static_cast<uint16_t>(peers_binary[i+4])) << 8 | (static_cast<uint16_t>(peers_binary[i+5]));
+        std::cout << "ip: " << ip_stream.str() << " port: " << port << std::endl;
 		this->peers.emplace_back(std::make_shared<Peer>(ip_stream.str(), port));
 		peers++;
 	}
