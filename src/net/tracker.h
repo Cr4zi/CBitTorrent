@@ -15,6 +15,7 @@
 #include <sstream>
 #include <map>
 #include <optional>
+#include <chrono>
 
 enum State {
     CONNECTING, SENDING, RECEIVING, DONE, ERROR
@@ -25,6 +26,8 @@ private:
     std::string tracker_url, host, tracker_id;
     uint16_t port;
     int64_t interval;
+
+	std::chrono::steady_clock::time_point last_time_sent;
 
     std::vector<std::shared_ptr<Peer>> peers;
 
@@ -52,7 +55,11 @@ public:
     std::string get_host() { return this->host; }
     std::vector<std::shared_ptr<Peer>> get_peers() { return this->peers; }
 
+	void sendBytes(std::string &msg) override;
+	
 	int connect();
+
+	bool can_send();
 };
 
 #endif // TRACKER_H_

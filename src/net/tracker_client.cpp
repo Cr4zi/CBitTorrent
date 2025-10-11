@@ -194,7 +194,7 @@ void TrackerClient::tracker_request(Event ev) {
                 }
             }
 
-			if(tracker->state == SENDING && events[i].events & EPOLLOUT) {
+			if(tracker->state == SENDING && tracker->can_send() && events[i].events & EPOLLOUT) {
                 std::cout << "Sending: " << fd << " To: " << tracker->get_host() << std::endl;
 				try {
 					std::string request = this->prepare_request(tracker->get_host(), ev);

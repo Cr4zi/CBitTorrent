@@ -34,7 +34,7 @@ public:
 
     int connectSocket(const char *host, uint16_t port);
 
-    void sendBytes(std::string &msg);
+    virtual void sendBytes(std::string &msg);
 
     // when calling this function bytesRead should be 0
     std::vector<char> readBytes(ssize_t &bytes_read);

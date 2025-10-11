@@ -1,4 +1,6 @@
 #include "tracker.h"
+#include "basic_socket.h"
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -40,6 +42,11 @@ void Tracker::parse_url() {
 
     this->parse_port(portStr);
 
+}
+
+void Tracker::sendBytes(std::string& msg) {
+    this->last_time_sent = std::chrono::steady_clock::now();
+    BasicSocket::sendBytes(msg);
 }
  
 int Tracker::connect() {
@@ -108,6 +115,10 @@ ssize_t Tracker::parse_peers_binary(std::string& peers_binary) { // inshalla thi
 		peers++;
 	}
 	return peers;
+}
+
+bool Tracker::can_send() {
+    return peers.empty() || std::chrono::steady_clock::now() - this->last_time_sent > std::chrono::seconds(interval);
 }
 
 ssize_t Tracker::generate_peers(std::vector<char>& response) {
