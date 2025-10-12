@@ -3,8 +3,8 @@
 
 #include "basic_socket.h"
 #include "../exceptions.h"
-#include "../peer.h"
-#include "../bencode.h"
+#include "peer.h"
+#include "../core/bencode.h"
 
 #include <algorithm>
 #include <string>

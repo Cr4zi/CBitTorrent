@@ -1,6 +1,6 @@
 #include <iostream>
 #include <sys/socket.h>
-#include "torrent_file.h"
+#include "core/torrent_file.h"
 #include "net/tracker_client.h"
 
 int main() {

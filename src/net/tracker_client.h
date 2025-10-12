@@ -3,10 +3,10 @@
 
 #include "basic_socket.h"
 #include "tracker.h"
-#include "../torrent_file.h"
+#include "../core/torrent_file.h"
 #include "../globals.h"
 #include "../exceptions.h"
-#include "../peer.h"
+#include "peer.h"
 
 #include <openssl/rand.h>
 #include <openssl/err.h>
