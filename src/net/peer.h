@@ -32,10 +32,11 @@ typedef struct{
 
 class Peer {
 private:
-	bool isChoked, isInterested;
 	
     std::string peer_id, ip;
     uint16_t port;
+
+	bool choked, interested;
 
 	BasicSocket socket;
 
@@ -46,8 +47,8 @@ public:
         : peer_id(peer_id),
           ip(ip),
           port(port),
-		  isChoked(true),
-		  isInterested(false),
+		  choked(true),
+		  interested(false),
 		  socket(AF_INET, SOCK_STREAM, 0, true)
         {
 			socket.connectSocket(ip.c_str(), port);
@@ -57,16 +58,18 @@ public:
         : peer_id(""),
 		  ip(ip),
 		  port(port),
-		  isChoked(true),
-		  isInterested(false),
+		  choked(true),
+		  interested(false),
 		  socket(AF_INET, SOCK_STREAM, 0, true)
         {
 			socket.connectSocket(ip.c_str(), port);
 		};
 
+    void setChoked(bool choked) { this->choked = choked; }
+
 	void handshake(std::string info_hash, std::string my_peer_id);
     void keep_alive();
-	void sendMsg(MessageType type, const std::vector<char>& payload);
+	ssize_t sendMsg(MessageType type, const std::vector<char>& payload);
     std::shared_ptr<Message> read();
 };
 

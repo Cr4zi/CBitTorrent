@@ -34,7 +34,10 @@ void Peer::keep_alive() {
 	this->send(oss);
 }
 
-void Peer::sendMsg(MessageType type, const std::vector<char>& payload) {
+ssize_t Peer::sendMsg(MessageType type, const std::vector<char>& payload) {
+	if(this->choked) {
+		return -1;
+	}
 	uint32_t length = htonl(payload.size() + 1);
 	std::ostringstream oss(std::ios::binary);
 	oss.write(reinterpret_cast<const char *>(&length), 4);
@@ -43,6 +46,7 @@ void Peer::sendMsg(MessageType type, const std::vector<char>& payload) {
 		oss.write(payload.data(), payload.size());
 
 	this->send(oss);
+	return 0;
 }
 
 std::shared_ptr<Message> Peer::read() {
